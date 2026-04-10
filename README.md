@@ -26,7 +26,6 @@ Download the Amazon Reviews 2023 dataset from: https://amazon-reviews-2023.githu
 
 Categories included:
 - Books (primary - ~5GB compressed)
-- Electronics, Home & Kitchen, Beauty, Toys (alternatives for testing)
 
 Place raw data in:
 ```
