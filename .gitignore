@@ -18,3 +18,4 @@ env/
 .vscode/
 .idea/
 .Rhistory
+.DS_Store
