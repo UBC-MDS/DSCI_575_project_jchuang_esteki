@@ -25,7 +25,7 @@ conda activate 575-project
 Download the Amazon Reviews 2023 dataset from: https://amazon-reviews-2023.github.io/
 
 Categories included:
-- Books (primary - ~5GB compressed)
+- Books (primary ~5GB compressed)
 
 Place raw data in:
 ```
@@ -41,11 +41,11 @@ data/raw/
 jupyter notebook
 
 # In browser, run notebooks in this order:
-# 0. milestone1_exploration.ipynb
-# 1. notebooks/01_data_preparation.ipynb
-# 2. notebooks/02_bm25_keyword_search.ipynb
-# 3. notebooks/03_semantic_embedding_search.ipynb
-# 4. notebooks/04_evaluation_and_verification.ipynb
+# 1. notebooks/01_exploration.ipynb
+# 2. notebooks/02_data_preparation.ipynb
+# 3. notebooks/03_bm25_keyword_search.ipynb
+# 4. notebooks/04_semantic_embedding_search.ipynb
+# 5. notebooks/05_evaluation_and_verification.ipynb
 ```
 
 ### 4. Launch Web App
@@ -75,11 +75,11 @@ DSCI_575_project_jchuang_esteki/
 │       └── semantic_index/            # FAISS embeddings & metadata
 │
 ├── notebooks/
-│   ├── milestone1_exploration.ipynb        # Data exploration & analysis
-│   ├── 01_data_preparation.ipynb           # Build corpus & utilities
-│   ├── 02_bm25_keyword_search.ipynb        # BM25 implementation & testing
-│   ├── 03_semantic_embedding_search.ipynb  # Semantic search with embeddings
-│   └── 04_evaluation_and_verification.ipynb # Compare BM25 vs semantic
+│   ├── 01_exploration.ipynb                 # Data exploration & analysis
+│   ├── 02_data_preparation.ipynb            # Build corpus & utilities
+│   ├── 03_bm25_keyword_search.ipynb         # BM25 implementation & testing
+│   ├── 04_semantic_embedding_search.ipynb   # Semantic search with embeddings
+│   └── 05_evaluation_and_verification.ipynb # Compare BM25 vs semantic
 │
 ├── src/
 │   ├── __init__.py
@@ -89,7 +89,7 @@ DSCI_575_project_jchuang_esteki/
 │   └── utils.py                       # Tokenization & preprocessing
 │
 ├── results/
-│   └── milestone1_discussion.md        # Findings & analysis
+│   └── milestone1_discussion.md       # Findings & analysis
 │
 └── app/
     └── app.py                         # Streamlit web interface
