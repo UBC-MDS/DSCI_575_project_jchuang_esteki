@@ -86,7 +86,7 @@ jupyter notebook
 # 04_semantic_embedding_search
 # 05_evaluation_and_verification
 
-# Note: This takes approximately 30 minutes
+# Note: This takes approximately 30 minutes (except for downloading raw data)
 ```
 
 **After indexes are generated:**
