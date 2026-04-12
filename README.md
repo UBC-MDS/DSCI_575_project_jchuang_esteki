@@ -120,7 +120,7 @@ Complex Queries (Both struggle):
   self help book for overcoming procrastination and building better habits
 ```
 
-How to test: Paste a query, try BM25 (fast, exact matches), then Semantic 
+**How to test:** Paste a query, try BM25 (fast, exact matches), then Semantic 
 (slower, understands intent), then Hybrid (adjust weight slider). Compare 
 results and see which method works better for different query types.
 
@@ -266,8 +266,8 @@ For each query, both methods retrieve top-5 results. The evaluation compares whi
 
 | Name | Role |
 |------|------|
-| Johnson Chuang | Data Processing & BM25 Implementation |
-| Hooman Esteki | Semantic Search & Integration |
+| Johnson Chuang | Semantic Search & Integration |
+| Hooman Esteki | Data Processing & BM25 Implementation |
 
 ---
 
