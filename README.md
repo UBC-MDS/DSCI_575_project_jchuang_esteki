@@ -15,7 +15,7 @@ Building a retrieval system teaches us what keyword matching and semantic unders
 
 We use the **Amazon Reviews 2023** dataset from UC San Diego's McAuley Lab, containing 571 million+ reviews across 34 product categories collected from May 1996 through September 2023.
 
-**Why Books Category:** Book reviews are detailed and substantive (users write paragraphs explaining what they liked), metadata is well-structured (clear titles, authors, descriptions), the dataset is large but manageable (11.7M reviews, 3.1M books), search queries are naturally diverse (by genre, topic, author, style, learning intent), and results are easy to verify (humans know what books are about).
+**Why "Books" Category:** Book reviews are detailed and substantive (users write paragraphs explaining what they liked), metadata is well-structured (clear titles, authors, descriptions), the dataset is large but manageable (11.7M reviews, 3.1M books), search queries are naturally diverse (by genre, topic, author, style, learning intent), and results are easy to verify (humans know what books are about).
 
 ### Data Files
 
