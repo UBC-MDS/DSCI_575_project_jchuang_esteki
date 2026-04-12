@@ -1,21 +1,53 @@
+# Environment
 .env
 .env.local
-data/raw/*.jsonl.gz
-data/raw/*.json
-data/raw/
-data/processed/*.pkl
-data/processed/*.pickle
-data/processed/*.faiss
-data/processed/*.index
-data/processed/*.parquet
-data/processed/semantic_index
-__pycache__/
-*.py[cod]
-.DS_Store
+.venv
 venv/
 env/
+
+# Data - Raw and Processed
+data/raw/
+data/processed/
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter
 .ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# IDE
 .vscode/
 .idea/
-.Rhistory
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# R
+.Rhistory
