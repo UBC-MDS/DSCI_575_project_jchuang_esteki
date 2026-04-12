@@ -153,7 +153,7 @@ Two indexes are then built over the same 20K corpus. The BM25 index (built with 
 
 - **Keyword search works best for simple, specific queries.** When a user searches for something like "cookbook recipes" or "science fiction space", BM25 quickly finds books whose titles and reviews contain those exact words. It is fast and reliable for straightforward lookups.
 
-- **Semantic search handles meaning better.** For vaguer queries like "guide for first time parents" or "historical fiction set in World War 2 from a female perspective", semantic search understood the intent and returned genuinely relevant books — even when the exact words weren't in the document. BM25 struggled here, often matching on individual words out of context (e.g. returning travel guides for the word "guide").
+- **Semantic search handles meaning better.** For vaguer queries like "guide for first time parents" or "self help book for overcoming procrastination and building better habits", semantic search understood the intent and returned genuinely relevant books — even when the exact words weren't in the document. BM25 struggled here, often matching on individual words out of context (e.g. returning travel guides for the word "guide").
 
 - **Both methods have blind spots.** Neither approach can return a book that isn't in the dataset. When we searched for "python programming", neither method found Python-specific books — because there simply weren't enough in our sample. No retrieval system can compensate for missing data.
 
