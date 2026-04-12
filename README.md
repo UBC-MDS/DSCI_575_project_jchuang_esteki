@@ -1,66 +1,157 @@
-# Dual Retrieval System: BM25 & Semantic Search
+# Amazon Books Retrieval System
+## Dual-Method Information Retrieval Foundation
+
+A retrieval system combining **BM25 keyword-based search** and **semantic embedding-based search** to find relevant books from the Amazon Reviews 2023 dataset. This forms the foundation for a multi-phase Retrieval-Augmented Generation (RAG) project that will later add LLM-powered responses.
+
 ---
 
 ## Overview
 
-This project implements and evaluates two complementary information retrieval methods on the Amazon Reviews 2023 dataset:
+### Project Goal
 
-- BM25: Fast keyword-based ranking using Okapi BM25 algorithm
-- Semantic Search: Meaning-based retrieval using sentence embeddings and FAISS indexing
+Building a retrieval system teaches us what keyword matching and semantic understanding can achieve independently. Users search in different ways: some use exact keywords ("mystery novel"), others describe intent ("book to help with anxiety"), and some have complex needs ("best book to learn machine learning with no math background"). This project explores how BM25 and semantic search handle these different patterns, then later milestones will combine them with LLM intelligence to generate helpful responses.
 
-The system demonstrates how statistical and neural approaches complement each other for effective document retrieval.
+### Dataset: Amazon Reviews 2023
 
-### About the Dataset
+We use the **Amazon Reviews 2023** dataset from UC San Diego's McAuley Lab, containing 571 million+ reviews across 34 product categories collected from May 1996 through September 2023.
 
-The project uses the **Amazon Reviews 2023** dataset (Books category), sourced from the McAuley Lab at UC San Diego. Two files are used:
+**Why Books Category:** Book reviews are detailed and substantive (users write paragraphs explaining what they liked), metadata is well-structured (clear titles, authors, descriptions), the dataset is large but manageable (11.7M reviews, 3.1M books), search queries are naturally diverse (by genre, topic, author, style, learning intent), and results are easy to verify (humans know what books are about).
 
-- **`Books.jsonl.gz`** — User-written reviews, including star rating, review title, review text, and timestamp. Each record corresponds to one review of one product.
-- **`meta_Books.jsonl.gz`** — Product metadata, including book title, author, description, features, price, and category. Each record corresponds to one product (identified by `parent_asin`).
+### Data Files
 
-The two files are joined on `parent_asin` to combine review text with book titles, forming the retrieval corpus.
+The project uses two primary files from the Books category:
+
+**Reviews File: `Books.jsonl.gz`** - Contains 11.7 million user-written reviews. Each line is a JSON object with fields: rating (1-5 stars), title (review headline), text (full review), timestamp, verified_purchase, helpful_vote, and parent_asin (links to product metadata).
+
+```
+Books.jsonl.gz (Reviews File)
+├── rating              [1-5 stars] User rating
+├── title               Review headline/summary
+├── text                Full review body
+├── timestamp           When review was written
+├── verified_purchase   Boolean: verified purchase or not
+├── helpful_vote        Number of helpful votes
+└── parent_asin         [KEY] Product identifier (links to metadata)
+```
+
+**Metadata File: `meta_Books.jsonl.gz`** - Contains 3.1 million product records. Each product has: asin (unique ID), parent_asin (for variants), title (book name), description, price, images, features, main_category, average_rating, and store information.
+
+```
+meta_Books.jsonl.gz (Metadata File)
+├── asin                Unique product identifier
+├── parent_asin         [KEY] Parent product (for variants)
+├── title               Product title (book name)
+├── description         Product description
+├── price               Current price (may be null)
+├── images              Product images
+├── features            Key features list
+├── main_category       Primary category (Books)
+├── average_rating      Mean user rating (0-5)
+└── store               Seller information
+```
+
+**Key Insight:** Reviews and metadata are separate files but linked via `parent_asin`. This allows combining product information ("The Da Vinci Code by Dan Brown") with user opinions ("this mystery novel kept me guessing until the end").
 
 ---
 
-## Quick Start
+## Getting Started
 
-### 1. Environment Setup
+### Requirements
+- Python 3.9+
+- 8GB RAM
+- 10GB disk space
+
+### Setup and Installation
+
 ```bash
-# Create and activate conda environment
+# Clone repository
+git clone https://github.com/UBC-MDS/DSCI_575_project_jchuang_esteki.git
+cd DSCI_575_project_jchuang_esteki
+
+# Create and activate environment
 conda env create -f environment.yml
 conda activate 575-project
 ```
 
-### 2. Data Preparation
-Download the Amazon Reviews 2023 dataset from: https://amazon-reviews-2023.github.io/
+### Running the System
 
-Categories included:
-- Books (primary ~5GB compressed)
-
-Place raw data in:
-```
-data/raw/
-├── Books.jsonl.gz
-├── meta_Books.jsonl.gz
-└── (other categories if desired)
-```
-
-### 3. Run Notebooks in Order
+**First time (generate indexes):**
 ```bash
-# Terminal 1: Launch Jupyter
 jupyter notebook
 
-# In browser, run notebooks in this order:
-# 1. notebooks/01_exploration.ipynb
-# 2. notebooks/02_data_preparation.ipynb
-# 3. notebooks/03_bm25_keyword_search.ipynb
-# 4. notebooks/04_semantic_embedding_search.ipynb
-# 5. notebooks/05_evaluation_and_verification.ipynb
+# Run notebooks in order:
+# 01_exploration
+# 02_data_preparation
+# 03_bm25_keyword_search
+# 04_semantic_embedding_search
+# 05_evaluation_and_verification
+
+# Note: This takes approximately 30 minutes
 ```
 
-### 4. Launch Web App
+**After indexes are generated:**
 ```bash
 streamlit run app/app.py
+# Opens at http://localhost:8501
 ```
+
+### Testing the System
+
+Try these example queries with the app running:
+
+```
+Easy Queries (BM25 works well):
+  mystery novel
+  cookbook recipes
+  science fiction space
+```
+
+```
+Medium Queries (Semantic works well):
+  book to help with anxiety
+  guide for first time parents
+  story about finding yourself
+```
+
+```
+Complex Queries (Both struggle):
+  best book to learn machine learning with no math background
+  historical fiction set in world war 2 from a female perspective
+  self help book for overcoming procrastination and building better habits
+```
+
+How to test: Paste a query, try BM25 (fast, exact matches), then Semantic 
+(slower, understands intent), then Hybrid (adjust weight slider). Compare 
+results and see which method works better for different query types.
+
+For detailed evaluation results, see `results/milestone1_discussion.md`.
+
+
+---
+
+## How the System Works
+
+### Data Processing Pipeline
+
+Raw data transforms through 5 distinct notebooks, each producing outputs for the next stage:
+
+- **Notebook 01: Exploration** explores the dataset structure by loading sample records, inspecting fields and distributions, visualizing rating patterns, and documenting field selection rationale. This ensures all downstream decisions are grounded in data understanding.
+
+- **Notebook 02: Data Preparation** processes millions of reviews into a retrieval-ready corpus. It uses DuckDB to efficiently stream 11.7 million reviews without memory overflow, creates a stratified 20,000-review sample balanced across ratings, joins reviews with metadata on parent_asin, applies consistent text preprocessing (lowercase, remove punctuation, normalize whitespace, filter < 20 chars), and concatenates product title with review text into unified documents. Outputs: `corpus.pkl` (20K preprocessed documents) and `books_sample.parquet`.
+
+- **Notebook 03: BM25 Indexing** builds keyword-based search capability by loading the corpus, tokenizing documents consistently, building an inverted index using `rank_bm25`, and testing on sample queries. Output: `bm25_index.pkl`.
+
+- **Notebook 04: Semantic Indexing** builds meaning-based search capability by loading the corpus, encoding all documents to 384-dimensional vectors using `all-MiniLM-L6-v2` sentence-transformers model, building a FAISS index for fast similarity search, and testing on sample queries. Output: `semantic_index/` directory.
+
+- **Notebook 05: Evaluation** compares both methods on a diverse set of queries, creates retrieval results, analyzes performance patterns, and documents findings. Output: `results/milestone1_discussion.md`.
+
+### Retrieval Methods
+
+- **BM25 Keyword Search (Notebook 03):** Indexes every word and which documents contain it. When searching "mystery novel", finds documents with both words and scores based on term frequency and inverse document frequency. Speed: <10ms per query. Strengths: fast, transparent, exact keyword matching. Limitations: no synonyms ("anxious" ≠ "anxiety"), words treated independently, no intent understanding.
+
+- **Semantic Search (Notebook 04):** Converts documents and queries into vectors where similar meaning corresponds to nearby locations. The pre-trained model learned that "parent", "parenting", "newborn", "baby" should be close in vector space. When searching "guide for first time parents", finds the query embedding's nearest neighbors and returns results ranked by distance. Speed: ~100ms per query. Strengths: understands intent, handles synonyms, context-aware. Limitations: slower, less transparent, may miss exact matches.
+
+- **Hybrid Search (Optional):** Combines both methods with adjustable weights, giving users control to emphasize either keyword matching or semantic understanding.
 
 ---
 
@@ -68,110 +159,128 @@ streamlit run app/app.py
 
 ```
 DSCI_575_project_jchuang_esteki/
-├── README.md                          # Project documentation
-├── environment.yml                    # Conda environment specification
-├── .env.example                       # Example environment variables
-├── .gitignore                         # Git ignore rules
+│
+├── README.md                         # Project documentation
+├── environment.yml                   # Conda dependencies
+├── .gitignore                        # Excludes data and credentials
 │
 ├── data/
-│   ├── raw/                           # Raw dataset (gitignored)
-│   │   ├── Books.jsonl.gz
-│   │   └── meta_Books.jsonl.gz
-│   └── processed/                     # Processed artifacts
-│       ├── books_sample.parquet       # Filtered & deduplicated corpus
-│       ├── corpus.pkl                 # Tokenized documents
-│       ├── bm25_index.pkl             # BM25 inverted index
-│       └── semantic_index/            # FAISS embeddings & metadata
+│   ├── raw/                          # Raw dataset (NOT in git)
+│   │   ├── Books.jsonl.gz            # Reviews: 11.7M records
+│   │   └── meta_Books.jsonl.gz       # Metadata: 3.1M records
+│   └── processed/                    # Generated by notebooks (NOT in git)
+│       ├── books_sample.parquet      # 20K stratified sample from 02
+│       ├── corpus.pkl                # Preprocessed documents from 02
+│       ├── bm25_index.pkl            # BM25 index from 03
+│       └── semantic_index/           # FAISS index from 04
 │
 ├── notebooks/
-│   ├── 01_exploration.ipynb                 # Data exploration & analysis
-│   ├── 02_data_preparation.ipynb            # Build corpus & utilities
-│   ├── 03_bm25_keyword_search.ipynb         # BM25 implementation & testing
-│   ├── 04_semantic_embedding_search.ipynb   # Semantic search with embeddings
-│   └── 05_evaluation_and_verification.ipynb # Compare BM25 vs semantic
+│   ├── 01_exploration.ipynb
+│   │   └─ Load and inspect dataset; justify field selection
+│   │
+│   ├── 02_data_preparation.ipynb
+│   │   └─ Load with DuckDB → Stratified sample → Join → Preprocess → Combine
+│   │
+│   ├── 03_bm25_keyword_search.ipynb
+│   │   └─ Tokenize → Build inverted index → Test queries
+│   │
+│   ├── 04_semantic_embedding_search.ipynb
+│   │   └─ Encode documents → Build FAISS index → Test queries
+│   │
+│   └── 05_evaluation_and_verification.ipynb
+│       └─ Load indexes → Retrieve top-5 for 10 queries → Analyze results
 │
 ├── src/
-│   ├── __init__.py
-│   ├── bm25.py                        # BM25Retriever class
-│   ├── semantic.py                    # SemanticRetriever class
-│   ├── retrieval_metrics.py           # Evaluation metrics
-│   └── utils.py                       # Tokenization & preprocessing
+│   ├── bm25.py                       # BM25Retriever class
+│   ├── semantic.py                   # SemanticRetriever class
+│   ├── utils.py                      # preprocess_text(), tokenize(), load functions
+│   ├── retrieval_metrics.py          # Optional: evaluation metrics
+│   └── hybrid.py                     # Optional: hybrid search
 │
 ├── results/
-│   └── milestone1_discussion.md       # Findings & analysis
+│   └── milestone1_discussion.md       # Evaluation: 10 queries, comparisons, findings
 │
-└── app/
-    └── app.py                         # Streamlit web interface
+├── app/
+│   └── app.py                        # Streamlit web interface
+│
+└── .env                              # Environment variables (NEVER commit)
+```
+
+### File Connections
+
+```
+Raw Data (Books.jsonl.gz + meta_Books.jsonl.gz)
+         ↓
+    Notebook 01 (Explore)
+         ↓
+    Notebook 02 (Process: Load → Sample → Join → Preprocess → Combine)
+         ↓
+    corpus.pkl (20K documents)
+         ↓
+    ┌────────────────────┬────────────────────┐
+    ↓                    ↓                    ↓
+Notebook 03          Notebook 04         src/utils.py
+(BM25 Index)     (Semantic Index)    (Preprocessing)
+    ↓                    ↓
+bm25_index.pkl    semantic_index/
+    ├────────────────────┬────────────────────┤
+    ↓                    ↓                    ↓
+         Notebook 05 (Evaluate)
+              ↓
+    milestone1_discussion.md
+              ↓
+          app/app.py
+     (Load indexes → Serve)
+              ↓
+        User Results
 ```
 
 ---
 
-## Technical Implementation
+## Text Preprocessing
 
-### BM25 Retriever
-- Algorithm: Okapi BM25 (rank-bm25 library)
-- Index: Inverted index with term frequency scores
-- Complexity: O(n) per query, instant ranking
-- Strengths: Fast, interpretable, keyword-precise
-- Limitations: Cannot capture semantic similarity
+All text processing uses consistent functions from `src/utils.py`:
 
-### Semantic Retriever
+1. **Lowercase:** "The Da Vinci Code" → "the da vinci code" (case-insensitive matching)
+2. **Remove Punctuation:** "don't" → "dont", "book?" → "book"
+3. **Normalize Whitespace:** Multiple spaces → single space
+4. **Filter Noise:** Remove documents < 20 characters
 
-- Model: `all-MiniLM-L6-v2` via sentence-transformers
-- Index: FAISS `IndexFlatL2` (exact nearest-neighbour search over dense vectors)
-- Embeddings: 384-dimensional vectors, one per document
-- Complexity: O(n) brute-force L2 search; scales to larger corpora with approximate FAISS indexes
-- Strengths: Captures semantic meaning, robust to synonyms and paraphrasing
-- Limitations: Slower to build than BM25, less interpretable, sensitive to corpus coverage
-
-### Data Pipeline
-```
-Raw Dataset (5GB)
-    |
-[Chunked Loading - Memory Optimized]
-    |
-Text Filtering (minimum 20 chars, non-null)
-    |
-Corpus Creation (20K reviews)
-    |
-Tokenization (utils.py)
-    |
-Dual Indexing
-├── BM25 Index (pkl)
-└── FAISS Index + Embeddings (bin)
-```
-
-#### Data Processing Details
-
-The raw Books dataset is too large to load fully into memory, so it is read in chunks and filtered down to a stratified 20,000-review sample containing only records with meaningful text (minimum 20 characters). Each document in the corpus is formed by concatenating the product title (from metadata, joined on `parent_asin`) with the review text, giving retrieval models both keyword-rich title signals and richer semantic context from the review body. The processed corpus is saved as a Parquet file for reuse, alongside a pickle of the tokenized documents and an ASIN-to-title lookup table used to display human-readable results.
-
-Two indexes are then built over the same 20K corpus. The BM25 index (built with `rank_bm25`) applies lowercasing, punctuation removal, and whitespace normalization before computing term-frequency scores, and is persisted as a pickle file for fast reload. The semantic index encodes each document into a 384-dimensional vector using the `all-MiniLM-L6-v2` sentence transformer, then stores the embeddings in a FAISS `IndexFlatL2` structure for exact nearest-neighbour search. Both indexes are loaded at app startup, allowing queries to be served by either method without rebuilding from scratch.
+**Critical:** Documents and queries must be processed identically or retrieval fails. The same preprocessing applies when building indexes (Notebooks 03-04) and processing queries (Notebook 05 and app.py at runtime).
 
 ---
 
-## Key Findings
+## Evaluation Results
 
-- **Keyword search works best for simple, specific queries.** When a user searches for something like "cookbook recipes" or "science fiction space", BM25 quickly finds books whose titles and reviews contain those exact words. It is fast and reliable for straightforward lookups.
+Notebook 05 evaluates both retrieval methods on a diverse set of 10 queries spanning three difficulty levels: Easy queries like "mystery novel" test pure keyword matching; Medium queries like "book to help with anxiety" require semantic understanding; Complex queries like "best book to learn machine learning with no math background" challenge both methods with multiple constraints.
 
-- **Semantic search handles meaning better.** For vaguer queries like "guide for first time parents" or "self help book for overcoming procrastination and building better habits", semantic search understood the intent and returned genuinely relevant books — even when the exact words weren't in the document. BM25 struggled here, often matching on individual words out of context (e.g. returning travel guides for the word "guide").
+For each query, both methods retrieve top-5 results. The evaluation compares which method performs better on different query types and identifies cases where each method excels or fails.
 
-- **Both methods have blind spots.** Neither approach can return a book that isn't in the dataset. When we searched for "python programming", neither method found Python-specific books — because there simply weren't enough in our sample. No retrieval system can compensate for missing data.
+**Key Findings:** BM25 excels on simple, exact keyword searches but gets confused by words with multiple meanings (e.g., "guide" returns travel guides when searching "guide for first time parents"). Semantic search better understands user intent and handles multi-word concepts (correctly interprets "machine learning" as one concept rather than confusing it with sewing machines). Both methods struggle when requested books don't exist in the dataset, when queries are vague or abstract, or when queries contain many specific requirements.
 
-- **Longer, complex queries favour semantic search.** BM25 treats a long query as a bag of individual words, which leads to false matches (e.g. "machine learning" matching sewing machine books). Semantic search encodes the full meaning of the query as a whole, making it more accurate for nuanced or multi-part requests.
-
-- **A hybrid approach would likely perform best.** Each method covers the other's weaknesses. Combining them — or adding a reranking step — is the natural next direction for improving retrieval quality.
+**Full Evaluation:** Complete results including all 10 queries with top-5 results from each method, detailed analysis of 5 queries, comparative findings, and recommendations are documented in `results/milestone1_discussion.md`.
 
 ---
 
 ## Team
 
-| Name | GitHub | Role |
-|------|--------|------|
-| Johnson Chuang | jchuang | Semantic Search & Integration |
-| Hooman Esteki | esteki | BM25 Search & Integration |
+| Name | Role |
+|------|------|
+| Johnson Chuang | Data Processing & BM25 Implementation |
+| Hooman Esteki | Semantic Search & Integration |
+
+---
+
+## References and Resources
+
+- Dataset: https://amazon-reviews-2023.github.io/
+- BM25 Algorithm: https://en.wikipedia.org/wiki/Okapi_BM25
+- Sentence-Transformers: https://www.sbert.net/
+- FAISS: https://faiss.ai/
+- Streamlit: https://docs.streamlit.io/
 
 ---
 
 ## License
 
-MIT License - See LICENSE file for details
+MIT License
