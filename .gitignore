@@ -8,7 +8,7 @@ data/processed/*.pickle
 data/processed/*.faiss
 data/processed/*.index
 data/processed/*.parquet
-data/processed/semantic_index/
+data/processed/semantic_index
 __pycache__/
 *.py[cod]
 .DS_Store

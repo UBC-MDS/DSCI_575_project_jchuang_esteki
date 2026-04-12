@@ -10,6 +10,15 @@ This project implements and evaluates two complementary information retrieval me
 
 The system demonstrates how statistical and neural approaches complement each other for effective document retrieval.
 
+### About the Dataset
+
+The project uses the **Amazon Reviews 2023** dataset (Books category), sourced from the McAuley Lab at UC San Diego. Two files are used:
+
+- **`Books.jsonl.gz`** — User-written reviews, including star rating, review title, review text, and timestamp. Each record corresponds to one review of one product.
+- **`meta_Books.jsonl.gz`** — Product metadata, including book title, author, description, features, price, and category. Each record corresponds to one product (identified by `parent_asin`).
+
+The two files are joined on `parent_asin` to combine review text with book titles, forming the retrieval corpus.
+
 ---
 
 ## Quick Start
@@ -108,7 +117,12 @@ DSCI_575_project_jchuang_esteki/
 
 ### Semantic Retriever
 
-coming soon
+- Model: `all-MiniLM-L6-v2` via sentence-transformers
+- Index: FAISS `IndexFlatL2` (exact nearest-neighbour search over dense vectors)
+- Embeddings: 384-dimensional vectors, one per document
+- Complexity: O(n) brute-force L2 search; scales to larger corpora with approximate FAISS indexes
+- Strengths: Captures semantic meaning, robust to synonyms and paraphrasing
+- Limitations: Slower to build than BM25, less interpretable, sensitive to corpus coverage
 
 ### Data Pipeline
 ```
@@ -127,11 +141,25 @@ Dual Indexing
 └── FAISS Index + Embeddings (bin)
 ```
 
+#### Data Processing Details
+
+The raw Books dataset is too large to load fully into memory, so it is read in chunks and filtered down to a stratified 20,000-review sample containing only records with meaningful text (minimum 20 characters). Each document in the corpus is formed by concatenating the product title (from metadata, joined on `parent_asin`) with the review text, giving retrieval models both keyword-rich title signals and richer semantic context from the review body. The processed corpus is saved as a Parquet file for reuse, alongside a pickle of the tokenized documents and an ASIN-to-title lookup table used to display human-readable results.
+
+Two indexes are then built over the same 20K corpus. The BM25 index (built with `rank_bm25`) applies lowercasing, punctuation removal, and whitespace normalization before computing term-frequency scores, and is persisted as a pickle file for fast reload. The semantic index encodes each document into a 384-dimensional vector using the `all-MiniLM-L6-v2` sentence transformer, then stores the embeddings in a FAISS `IndexFlatL2` structure for exact nearest-neighbour search. Both indexes are loaded at app startup, allowing queries to be served by either method without rebuilding from scratch.
+
 ---
 
 ## Key Findings
 
-coming soon ...
+- **Keyword search works best for simple, specific queries.** When a user searches for something like "cookbook recipes" or "science fiction space", BM25 quickly finds books whose titles and reviews contain those exact words. It is fast and reliable for straightforward lookups.
+
+- **Semantic search handles meaning better.** For vaguer queries like "guide for first time parents" or "self help book for overcoming procrastination and building better habits", semantic search understood the intent and returned genuinely relevant books — even when the exact words weren't in the document. BM25 struggled here, often matching on individual words out of context (e.g. returning travel guides for the word "guide").
+
+- **Both methods have blind spots.** Neither approach can return a book that isn't in the dataset. When we searched for "python programming", neither method found Python-specific books — because there simply weren't enough in our sample. No retrieval system can compensate for missing data.
+
+- **Longer, complex queries favour semantic search.** BM25 treats a long query as a bag of individual words, which leads to false matches (e.g. "machine learning" matching sewing machine books). Semantic search encodes the full meaning of the query as a whole, making it more accurate for nuanced or multi-part requests.
+
+- **A hybrid approach would likely perform best.** Each method covers the other's weaknesses. Combining them — or adding a reranking step — is the natural next direction for improving retrieval quality.
 
 ---
 
