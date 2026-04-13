@@ -220,8 +220,8 @@ DSCI_575_project_jchuang_esteki/
                                   ↓
         ┌─────────────────────────┼─────────────────────────┐
         ↓                         ↓                         ↓
-  Notebook 03               Notebook 04                src/utils.py
- (BM25 Index)             (Semantic Index)           (Preprocessing)
+    Notebook 03              Notebook 04               src/utils.py
+   (BM25 Index)            (Semantic Index)           (Preprocessing)
         ↓                         ↓
   bm25_index.pkl          semantic_index/
         └─────────────────────────┬─────────────────────────┘
