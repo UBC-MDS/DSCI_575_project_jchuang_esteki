@@ -210,30 +210,30 @@ DSCI_575_project_jchuang_esteki/
 ## File Connections
 
 ```
-Raw Data (Books.jsonl.gz + meta_Books.jsonl.gz)
-         ↓
-    Notebook 01 (Explore)
-         ↓
-    Notebook 02 (Process: Load → Sample → Join → Preprocess → Combine)
-         ↓
-    corpus.pkl (20K documents)
-         ↓
-    ┌────────────────────┬────────────────────┐
-    ↓                    ↓                    ↓
-Notebook 03          Notebook 04         src/utils.py
-(BM25 Index)     (Semantic Index)    (Preprocessing)
-    ↓                    ↓
-bm25_index.pkl    semantic_index/
-    ├────────────────────┬────────────────────┤
-    ↓                    ↓                    ↓
-         Notebook 05 (Evaluate)
-              ↓
-    milestone1_discussion.md
-              ↓
-          app/app.py
-     (Load indexes → Serve)
-              ↓
-        User Results
+                Raw Data (Books.jsonl.gz + meta_Books.jsonl.gz)
+                                  ↓
+                          Notebook 01 (Explore)
+                                  ↓
+   Notebook 02 (Process: Load → Sample → Join → Preprocess → Combine)
+                                  ↓
+                      corpus.pkl (20K documents)
+                                  ↓
+        ┌─────────────────────────┼─────────────────────────┐
+        ↓                         ↓                         ↓
+ Notebook 03               Notebook 04                src/utils.py
+ (BM25 Index)          (Semantic Index)           (Preprocessing)
+        ↓                         ↓
+  bm25_index.pkl          semantic_index/
+        └─────────────────────────┬─────────────────────────┘
+                                  ↓
+                        Notebook 05 (Evaluate)
+                                  ↓
+                   milestone1_discussion.md
+                                  ↓
+                             app/app.py
+                    (Load indexes → Serve)
+                                  ↓
+                             User Results
 ```
 
 ---
