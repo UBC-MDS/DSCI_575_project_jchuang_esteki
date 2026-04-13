@@ -276,13 +276,35 @@ All text processing uses consistent functions from `src/utils.py`:
 
 ## Evaluation Results
 
-Notebook 05 evaluates both retrieval methods on a diverse set of 10 queries spanning three difficulty levels: Easy queries like "mystery novel" test pure keyword matching; Medium queries like "book to help with anxiety" require semantic understanding; Complex queries like "best book to learn machine learning with no math background" challenge both methods with multiple constraints.
+Notebook 05 evaluates two retrieval methods across 10 queries of varying difficulty:
 
-For each query, both methods retrieve top-5 results. The evaluation compares which method performs better on different query types and identifies cases where each method excels or fails.
+* **Easy** (e.g., "mystery novel"): tests keyword matching
+* **Medium** (e.g., "book to help with anxiety"): requires semantic understanding
+* **Complex** (e.g., "best book to learn machine learning with no math background"): involves multiple constraints
 
-**Key Findings:** BM25 excels on simple, exact keyword searches but gets confused by words with multiple meanings (e.g., "guide" returns travel guides when searching "guide for first time parents"). Semantic search better understands user intent and handles multi-word concepts (correctly interprets "machine learning" as one concept rather than confusing it with sewing machines). Both methods struggle when requested books don't exist in the dataset, when queries are vague or abstract, or when queries contain many specific requirements.
+For each query, both methods retrieve the top-5 results. The evaluation compares performance across query types to identify where each method succeeds or fails.
 
-**Full Evaluation:** Complete results including all 10 queries with top-5 results from each method, detailed analysis of 5 queries, comparative findings, and recommendations are documented in `results/milestone1_discussion.md`.
+### Key Findings
+
+* **BM25**
+
+  * Strong on exact keyword matching
+  * Struggles with ambiguous terms (e.g., "guide")
+
+* **Semantic search**
+
+  * Better at capturing user intent
+  * Handles multi-word concepts well (e.g., "machine learning")
+
+* **Both methods**
+
+  * Struggle with vague or abstract queries
+  * Fail when relevant items don’t exist in the dataset
+  * Perform poorly on queries with many specific constraints
+
+### Full Evaluation
+
+Complete results, including all 10 queries with top-5 results from each method, detailed analysis of 5 queries, comparative findings, and recommendations, are documented in `results/milestone1_discussion.md`.
 
 ---
 
