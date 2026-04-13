@@ -3,6 +3,27 @@
 
 A retrieval system combining **BM25 keyword-based search** and **semantic embedding-based search** to find relevant books from the Amazon Reviews 2023 dataset. This forms the foundation for a multi-phase Retrieval-Augmented Generation (RAG) project that will later add LLM-powered responses.
 
+![Python 3.11](https://img.shields.io/badge/Python-3.11-blue)
+![License MIT](https://img.shields.io/badge/License-MIT-green)
+![Status Active](https://img.shields.io/badge/Status-Active-success)
+![Milestone 1](https://img.shields.io/badge/Milestone-1-blue)
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Getting Started](#getting-started)
+- [Running the System](#running-the-system)
+- [Testing the System](#testing-the-system)
+- [How the System Works](#how-the-system-works)
+- [Project Structure](#project-structure)
+- [Text Preprocessing](#text-preprocessing)
+- [Evaluation Results](#evaluation-results)
+- [Team](#team)
+- [References and Resources](#references-and-resources)
+- [License](#license)
+
 ---
 
 ## Overview
@@ -15,13 +36,13 @@ Building a retrieval system teaches us what keyword matching and semantic unders
 
 We use the **Amazon Reviews 2023** dataset from UC San Diego's McAuley Lab, containing 571 million+ reviews across 34 product categories collected from May 1996 through September 2023.
 
-**Why Books Category:** Book reviews are detailed and substantive (users write paragraphs explaining what they liked), metadata is well-structured (clear titles, authors, descriptions), the dataset is large but manageable (11.7M reviews, 3.1M books), search queries are naturally diverse (by genre, topic, author, style, learning intent), and results are easy to verify (humans know what books are about).
+**Why "Books" Category:** Book reviews are detailed and substantive (users write paragraphs explaining what they liked), metadata is well-structured (clear titles, authors, descriptions), the dataset is large but manageable (11.7M reviews, 3.1M books), search queries are naturally diverse (by genre, topic, author, style, learning intent), and results are easy to verify (humans know what books are about).
 
 ### Data Files
 
 The project uses two primary files from the Books category:
 
-**Reviews File: `Books.jsonl.gz`** - Contains 11.7 million user-written reviews. Each line is a JSON object with fields:
+**Reviews File: `Books.jsonl.gz`** - Contains 11.7 million user-written reviews. Each line is a JSON object with fields: rating (1-5 stars), title (review headline), text (full review), timestamp, verified_purchase, helpful_vote, and parent_asin (links to product metadata).
 
 ```
 Books.jsonl.gz (Reviews File)
@@ -34,7 +55,7 @@ Books.jsonl.gz (Reviews File)
 └── parent_asin         [KEY] Product identifier (links to metadata)
 ```
 
-**Metadata File: `meta_Books.jsonl.gz`** - Contains 3.1 million product records. Each product has:
+**Metadata File: `meta_Books.jsonl.gz`** - Contains 3.1 million product records. Each product has: asin (unique ID), parent_asin (for variants), title (book name), description, price, images, features, main_category, average_rating, and store information.
 
 ```
 meta_Books.jsonl.gz (Metadata File)
@@ -57,9 +78,9 @@ meta_Books.jsonl.gz (Metadata File)
 ## Getting Started
 
 ### Requirements
+- Python 3.9+
 - 8GB RAM
 - 10GB disk space
-- Python ≥3.9 (3.11 used)
 
 ### Setup and Installation
 
@@ -73,7 +94,9 @@ conda env create -f environment.yml
 conda activate 575-project
 ```
 
-### Running the System
+---
+
+## Running the System
 
 **First time (generate indexes):**
 ```bash
@@ -86,8 +109,7 @@ jupyter notebook
 # 04_semantic_embedding_search
 # 05_evaluation_and_verification
 
-# Note: This process can take up to 30 minutes (excluding raw data download).
-# Note: Dataset download may take up to an hour, depending on your internet connection.
+# Note: This takes approximately 30 minutes (except for downloading raw data)
 ```
 
 **After indexes are generated:**
@@ -96,26 +118,28 @@ streamlit run app/app.py
 # Opens at http://localhost:8501
 ```
 
-### Testing the System
+---
 
-Here are some example queries to try with the app:
+## Testing the System
 
-#### Easy Queries (BM25 works well):
+Try these example queries with the app running:
+
 ```
+Easy Queries (BM25 works well):
   mystery novel
   cookbook recipes
   science fiction space
 ```
 
-#### Medium Queries (Semantic works well):
 ```
+Medium Queries (Semantic works well):
   book to help with anxiety
   guide for first time parents
   story about finding yourself
 ```
 
-#### Complex Queries (Both struggle):
 ```
+Complex Queries (Both struggle):
   best book to learn machine learning with no math background
   historical fiction set in world war 2 from a female perspective
   self help book for overcoming procrastination and building better habits
@@ -126,7 +150,6 @@ Here are some example queries to try with the app:
 results and see which method works better for different query types.
 
 For detailed evaluation results, see `results/milestone1_discussion.md`.
-
 
 ---
 
@@ -199,109 +222,67 @@ DSCI_575_project_jchuang_esteki/
 │   └── hybrid.py                     # Optional: hybrid search
 │
 ├── results/
-│   └── milestone1_discussion.md      # Evaluation: 10 queries, comparisons, findings
+│   └── milestone1_discussion.md       # Evaluation: 10 queries, comparisons, findings
 │
 ├── app/
 │   └── app.py                        # Streamlit web interface
 │
 └── .env                              # Environment variables (NEVER commit)
 ```
----
-## File Connections
+
+### File Connections
 
 ```
-           Raw Data (Books.jsonl.gz + meta_Books.jsonl.gz)
-                                  ↓
-                          Notebook 01 (Explore)
-                                  ↓
-   Notebook 02 (Process: Load → Sample → Join → Preprocess → Combine)
-                                  ↓
-                      corpus.pkl (20K documents)
-                                  ↓
-        ┌─────────────────────────┼─────────────────────────┐
-        ↓                         ↓                         ↓
-    Notebook 03              Notebook 04               src/utils.py
-   (BM25 Index)            (Semantic Index)           (Preprocessing)
-        ↓                         ↓
-  bm25_index.pkl          semantic_index/
-        └─────────────────────────┬─────────────────────────┘
-                                  ↓
-                        Notebook 05 (Evaluate)
-                                  ↓
-                     milestone1_discussion.md
-                                  ↓
-                             app/app.py
-                       (Load indexes → Serve)
-                                  ↓
-                             User Results
+Raw Data (Books.jsonl.gz + meta_Books.jsonl.gz)
+         ↓
+    Notebook 01 (Explore)
+         ↓
+    Notebook 02 (Process: Load → Sample → Join → Preprocess → Combine)
+         ↓
+    corpus.pkl (20K documents)
+         ↓
+    ┌────────────────────┬────────────────────┐
+    ↓                    ↓                    ↓
+Notebook 03          Notebook 04         src/utils.py
+(BM25 Index)     (Semantic Index)    (Preprocessing)
+    ↓                    ↓
+bm25_index.pkl    semantic_index/
+    ├────────────────────┬────────────────────┤
+    ↓                    ↓                    ↓
+         Notebook 05 (Evaluate)
+              ↓
+    milestone1_discussion.md
+              ↓
+          app/app.py
+     (Load indexes → Serve)
+              ↓
+        User Results
 ```
 
 ---
 
 ## Text Preprocessing
 
-All text is processed using consistent helper functions from `src/utils.py`.
+All text processing uses consistent functions from `src/utils.py`:
 
-### Processing Flow
-```
-Raw Text
-   ↓
-Lowercase
-   "The Da Vinci Code"
-→  "the da vinci code"
-   ↓
-Remove Punctuation
-   "don't", "book?"
-→  "dont", "book"
-   ↓
-Normalize Whitespace
-   "this   is   text"
-→  "this is text"
-   ↓
-Filter Noise
-   Remove documents < 20 characters
-```
+1. **Lowercase:** "The Da Vinci Code" → "the da vinci code" (case-insensitive matching)
+2. **Remove Punctuation:** "don't" → "dont", "book?" → "book"
+3. **Normalize Whitespace:** Multiple spaces → single space
+4. **Filter Noise:** Remove documents < 20 characters
 
-Please ensure that all documents and queries are processed identically, as retrieval will fail otherwise.
-
-The same preprocessing pipeline is used:
-- During indexing (Notebooks 03–04)
-- During query processing (Notebook 05 and `app.py` at runtime)
+**Critical:** Documents and queries must be processed identically or retrieval fails. The same preprocessing applies when building indexes (Notebooks 03-04) and processing queries (Notebook 05 and app.py at runtime).
 
 ---
+
 ## Evaluation Results
 
-Notebook 05 evaluates two retrieval methods across 10 queries of varying difficulty:
+Notebook 05 evaluates both retrieval methods on a diverse set of 10 queries spanning three difficulty levels: Easy queries like "mystery novel" test pure keyword matching; Medium queries like "book to help with anxiety" require semantic understanding; Complex queries like "best book to learn machine learning with no math background" challenge both methods with multiple constraints.
 
-* **Easy** (e.g., "mystery novel"): tests keyword matching
-* **Medium** (e.g., "book to help with anxiety"): requires semantic understanding
-* **Complex** (e.g., "best book to learn machine learning with no math background"): involves multiple constraints
+For each query, both methods retrieve top-5 results. The evaluation compares which method performs better on different query types and identifies cases where each method excels or fails.
 
-For each query, both methods retrieve the top-5 results. The evaluation compares performance across query types to identify where each method succeeds or fails.
+**Key Findings:** BM25 excels on simple, exact keyword searches but gets confused by words with multiple meanings (e.g., "guide" returns travel guides when searching "guide for first time parents"). Semantic search better understands user intent and handles multi-word concepts (correctly interprets "machine learning" as one concept rather than confusing it with sewing machines). Both methods struggle when requested books don't exist in the dataset, when queries are vague or abstract, or when queries contain many specific requirements.
 
-### Key Findings
-
-* **BM25**
-
-  * Strong on exact keyword matching
-  * Struggles with ambiguous terms (e.g., "guide")
-
-* **Semantic search**
-
-  * Better at capturing user intent
-  * Handles multi-word concepts well (e.g., "machine learning")
-
-* **Both methods**
-
-  * Struggle with vague or abstract queries
-  * Fail when relevant items don’t exist in the dataset
-  * Perform poorly on queries with many specific constraints
-
-### Full Evaluation
-
-Complete results, including all 10 queries with top-5 results from each method, detailed analysis of 5 queries, comparative findings, and recommendations, are documented in `results/milestone1_discussion.md`.
-
-
+**Full Evaluation:** Complete results including all 10 queries with top-5 results from each method, detailed analysis of 5 queries, comparative findings, and recommendations are documented in `results/milestone1_discussion.md`.
 
 ---
 
