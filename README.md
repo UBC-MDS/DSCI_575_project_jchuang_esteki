@@ -21,7 +21,7 @@ We use the **Amazon Reviews 2023** dataset from UC San Diego's McAuley Lab, cont
 
 The project uses two primary files from the Books category:
 
-**Reviews File: `Books.jsonl.gz`** - Contains 11.7 million user-written reviews. Each line is a JSON object with fields: rating (1-5 stars), title (review headline), text (full review), timestamp, verified_purchase, helpful_vote, and parent_asin (links to product metadata).
+**Reviews File: `Books.jsonl.gz`** - Contains 11.7 million user-written reviews. Each line is a JSON object with fields:
 
 ```
 Books.jsonl.gz (Reviews File)
@@ -34,7 +34,7 @@ Books.jsonl.gz (Reviews File)
 └── parent_asin         [KEY] Product identifier (links to metadata)
 ```
 
-**Metadata File: `meta_Books.jsonl.gz`** - Contains 3.1 million product records. Each product has: asin (unique ID), parent_asin (for variants), title (book name), description, price, images, features, main_category, average_rating, and store information.
+**Metadata File: `meta_Books.jsonl.gz`** - Contains 3.1 million product records. Each product has:
 
 ```
 meta_Books.jsonl.gz (Metadata File)
