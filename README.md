@@ -229,8 +229,8 @@ DSCI_575_project_jchuang_esteki/
 │
 └── .env                              # Environment variables (NEVER commit)
 ```
----
-## File Connections
+
+### File Connections
 
 ```
            Raw Data (Books.jsonl.gz + meta_Books.jsonl.gz)
