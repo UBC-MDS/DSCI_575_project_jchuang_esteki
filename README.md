@@ -199,7 +199,7 @@ DSCI_575_project_jchuang_esteki/
 │   └── hybrid.py                     # Optional: hybrid search
 │
 ├── results/
-│   └── milestone1_discussion.md       # Evaluation: 10 queries, comparisons, findings
+│   └── milestone1_discussion.md      # Evaluation: 10 queries, comparisons, findings
 │
 ├── app/
 │   └── app.py                        # Streamlit web interface
