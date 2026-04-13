@@ -210,7 +210,7 @@ DSCI_575_project_jchuang_esteki/
 ## File Connections
 
 ```
-                Raw Data (Books.jsonl.gz + meta_Books.jsonl.gz)
+           Raw Data (Books.jsonl.gz + meta_Books.jsonl.gz)
                                   ↓
                           Notebook 01 (Explore)
                                   ↓
