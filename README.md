@@ -240,14 +240,33 @@ DSCI_575_project_jchuang_esteki/
 
 ## Text Preprocessing
 
-All text processing uses consistent functions from `src/utils.py`:
+All text is processed using consistent helper functions from `src/utils.py`.
 
-1. **Lowercase:** "The Da Vinci Code" → "the da vinci code" (case-insensitive matching)
-2. **Remove Punctuation:** "don't" → "dont", "book?" → "book"
-3. **Normalize Whitespace:** Multiple spaces → single space
-4. **Filter Noise:** Remove documents < 20 characters
+### Processing Flow
+```
+Raw Text
+   ↓
+Lowercase
+   "The Da Vinci Code"
+→  "the da vinci code"
+   ↓
+Remove Punctuation
+   "don't", "book?"
+→  "dont", "book"
+   ↓
+Normalize Whitespace
+   "this   is   text"
+→  "this is text"
+   ↓
+Filter Noise
+   Remove documents < 20 characters
+```
 
-**Critical:** Documents and queries must be processed identically or retrieval fails. The same preprocessing applies when building indexes (Notebooks 03-04) and processing queries (Notebook 05 and app.py at runtime).
+Please ensure that all documents and queries are processed identically, as retrieval will fail otherwise.
+
+The same preprocessing pipeline is used:
+- During indexing (Notebooks 03–04)
+- During query processing (Notebook 05 and `app.py` at runtime)
 
 ---
 
