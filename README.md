@@ -100,22 +100,22 @@ streamlit run app/app.py
 
 Try these example queries with the app running:
 
+#### Easy Queries (BM25 works well):
 ```
-Easy Queries (BM25 works well):
   mystery novel
   cookbook recipes
   science fiction space
 ```
 
+#### Medium Queries (Semantic works well):
 ```
-Medium Queries (Semantic works well):
   book to help with anxiety
   guide for first time parents
   story about finding yourself
 ```
 
+#### Complex Queries (Both struggle):
 ```
-Complex Queries (Both struggle):
   best book to learn machine learning with no math background
   historical fiction set in world war 2 from a female perspective
   self help book for overcoming procrastination and building better habits
