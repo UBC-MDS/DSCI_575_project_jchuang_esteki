@@ -57,7 +57,7 @@ meta_Books.jsonl.gz (Metadata File)
 ## Getting Started
 
 ### Requirements
-- Python 3.9+
+- Python 3.9+ (environment.yml uses Python 3.11)
 - 8GB RAM
 - 10GB disk space
 
