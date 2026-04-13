@@ -98,7 +98,7 @@ streamlit run app/app.py
 
 ### Testing the System
 
-Try these example queries with the app running:
+Here are some example queries to try with the app:
 
 #### Easy Queries (BM25 works well):
 ```
