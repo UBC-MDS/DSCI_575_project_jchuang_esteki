@@ -87,7 +87,7 @@ jupyter notebook
 # 05_evaluation_and_verification
 
 # Note: This process can take up to 30 minutes (excluding raw data download).
-# Note: Downloading the dataset can take up to an hour, depending on your internet connection.
+# Note: Dataset download may take up to an hour, depending on your internet connection.
 ```
 
 **After indexes are generated:**
