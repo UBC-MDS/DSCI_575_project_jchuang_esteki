@@ -42,7 +42,7 @@ We use the **Amazon Reviews 2023** dataset from UC San Diego's McAuley Lab, cont
 
 The project uses two primary files from the Books category:
 
-**Reviews File: `Books.jsonl.gz`** - Contains 11.7 million user-written reviews. Each line is a JSON object with fields: rating (1-5 stars), title (review headline), text (full review), timestamp, verified_purchase, helpful_vote, and parent_asin (links to product metadata).
+**Reviews File: `Books.jsonl.gz`** - Contains 11.7 million user-written reviews. Each line is a JSON object with fields:
 
 ```
 Books.jsonl.gz (Reviews File)
@@ -55,7 +55,7 @@ Books.jsonl.gz (Reviews File)
 └── parent_asin         [KEY] Product identifier (links to metadata)
 ```
 
-**Metadata File: `meta_Books.jsonl.gz`** - Contains 3.1 million product records. Each product has: asin (unique ID), parent_asin (for variants), title (book name), description, price, images, features, main_category, average_rating, and store information.
+**Metadata File: `meta_Books.jsonl.gz`** - Contains 3.1 million product records. Each product has:
 
 ```
 meta_Books.jsonl.gz (Metadata File)
@@ -125,22 +125,21 @@ streamlit run app/app.py
 
 Try these example queries with the app running:
 
+#### Easy Queries (BM25 works well):
 ```
-Easy Queries (BM25 works well):
   mystery novel
   cookbook recipes
   science fiction space
 ```
 
+#### Medium Queries (Semantic works well):
 ```
-Medium Queries (Semantic works well):
   book to help with anxiety
   guide for first time parents
   story about finding yourself
 ```
-
+#### Complex Queries (Both struggle):
 ```
-Complex Queries (Both struggle):
   best book to learn machine learning with no math background
   historical fiction set in world war 2 from a female perspective
   self help book for overcoming procrastination and building better habits
