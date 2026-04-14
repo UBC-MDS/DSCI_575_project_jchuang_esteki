@@ -1,12 +1,12 @@
 # Amazon Books Retrieval System
-## Dual-Method Information Retrieval Foundation
+## Dual-Method Information Retrieval with RAG Integration
 
-A retrieval system combining **BM25 keyword-based search** and **semantic embedding-based search** to find relevant books from the Amazon Reviews 2023 dataset. This forms the foundation for a multi-phase Retrieval-Augmented Generation (RAG) project that will later add LLM-powered responses.
+A retrieval system combining **BM25 keyword-based search**, **semantic embedding-based search**, and **Retrieval-Augmented Generation (RAG)** to find relevant books from the Amazon Reviews 2023 dataset and generate AI-powered answers using Groq LLM.
 
 ![Python 3.11](https://img.shields.io/badge/Python-3.11-blue)
 ![License MIT](https://img.shields.io/badge/License-MIT-green)
 ![Status Active](https://img.shields.io/badge/Status-Active-success)
-![Milestone 1](https://img.shields.io/badge/Milestone-1-blue)
+![Milestone 2](https://img.shields.io/badge/Milestone-2-blue)
 
 ---
 
@@ -17,7 +17,11 @@ A retrieval system combining **BM25 keyword-based search** and **semantic embedd
 - [Running the System](#running-the-system)
 - [Testing the System](#testing-the-system)
 - [How the System Works](#how-the-system-works)
+- [Retrieval Methods](#retrieval-methods)
+- [Retrieval-Augmented Generation (RAG)](#retrieval-augmented-generation-rag)
+- [Groq LLM Integration](#groq-llm-integration)
 - [Project Structure](#project-structure)
+- [Data Files and Field Selection](#data-files-and-field-selection)
 - [Text Preprocessing](#text-preprocessing)
 - [Evaluation Results](#evaluation-results)
 - [Team](#team)
@@ -30,13 +34,307 @@ A retrieval system combining **BM25 keyword-based search** and **semantic embedd
 
 ### Project Goal
 
-Building a retrieval system teaches us what keyword matching and semantic understanding can achieve independently. Users search in different ways: some use exact keywords ("mystery novel"), others describe intent ("book to help with anxiety"), and some have complex needs ("best book to learn machine learning with no math background"). This project explores how BM25 and semantic search handle these different patterns, then later milestones will combine them with LLM intelligence to generate helpful responses.
+Building a retrieval system teaches us what keyword matching and semantic understanding can achieve independently. Users search in different ways: some use exact keywords ("mystery novel"), others describe intent ("book to help with anxiety"), and some have complex needs ("best book to learn machine learning with no math background"). This project explores how BM25 and semantic search handle these different patterns, combines them in hybrid mode, and then uses Retrieval-Augmented Generation to intelligently answer user queries using retrieved books as context.
 
 ### Dataset: Amazon Reviews 2023
 
 We use the **Amazon Reviews 2023** dataset from UC San Diego's McAuley Lab, containing 571 million+ reviews across 34 product categories collected from May 1996 through September 2023.
 
 **Why "Books" Category:** Book reviews are detailed and substantive (users write paragraphs explaining what they liked), metadata is well-structured (clear titles, authors, descriptions), the dataset is large but manageable (11.7M reviews, 3.1M books), search queries are naturally diverse (by genre, topic, author, style, learning intent), and results are easy to verify (humans know what books are about).
+
+---
+
+## Getting Started
+
+### Requirements
+- Python 3.11+
+- 16GB RAM
+- 10GB disk space
+- Groq API key (free tier)
+
+### Setup and Installation
+
+```bash
+# Clone repository
+git clone https://github.com/UBC-MDS/DSCI_575_project_jchuang_esteki.git
+cd DSCI_575_project_jchuang_esteki
+
+# Create and activate environment
+conda env create -f environment.yml
+conda activate 575-project
+
+# Create .env file with Groq API key
+cp env.example .env
+# Edit .env: add your GROQ_API_KEY=gsk_...
+```
+
+---
+
+## Running the System
+
+**First time (generate indexes and RAG pipeline):**
+```bash
+jupyter notebook
+
+# Run notebooks in order:
+# 01_exploration
+# 02_data_preparation
+# 03_bm25_keyword_search
+# 04_semantic_embedding_search
+# 05_evaluation_and_verification
+# 06_hybrid_retrieval
+# 07_rag_pipeline
+
+# Note: This takes approximately 45 minutes
+# Note: Dataset download may take up to an hour, depending on your internet connection.
+```
+
+**After setup:**
+```bash
+streamlit run app/app.py
+# Opens at http://localhost:8501
+```
+
+---
+
+## Testing the System
+
+Try these example queries with the app running:
+
+#### Easy Queries (BM25 works well):
+```
+  mystery novel
+  cookbook recipes
+  science fiction space
+```
+
+#### Medium Queries (Semantic works well):
+```
+  book to help with anxiety
+  guide for first time parents
+  story about finding yourself
+```
+
+#### Complex Queries (Hybrid and RAG work better):
+```
+  best book to learn machine learning with no math background
+  historical fiction set in world war 2 from a female perspective
+  self help book for overcoming procrastination and building better habits
+```
+
+**How to test:** Paste a query, try BM25 (fast, exact matches), Semantic (slower, understands intent), Hybrid (adjustable weights), or RAG (AI-generated answer with retrieved books). Compare results and see which method works better for different query types.
+
+For detailed evaluation results, see `results/milestone1_discussion.md` and `results/milestone2_discussion.md`.
+
+---
+
+## How the System Works
+
+### Data Processing Pipeline
+
+Raw data transforms through 7 distinct notebooks, each producing outputs for the next stage:
+
+- **Notebook 01: Exploration** explores the dataset structure by loading sample records, inspecting fields and distributions, visualizing rating patterns, and documenting field selection rationale.
+
+- **Notebook 02: Data Preparation** processes millions of reviews into a retrieval-ready corpus. It uses DuckDB to efficiently stream 11.7 million reviews without memory overflow, creates a stratified 20,000-review sample balanced across ratings, joins reviews with metadata on parent_asin, applies consistent text preprocessing, and concatenates product title with review text into unified documents. Outputs: `corpus.pkl` (20K preprocessed documents) and `books_sample.parquet`.
+
+- **Notebook 03: BM25 Indexing** builds keyword-based search capability by loading the corpus, tokenizing documents consistently, building an inverted index using `rank_bm25`, and testing on sample queries. Output: `bm25_index.pkl`.
+
+- **Notebook 04: Semantic Indexing** builds meaning-based search capability by loading the corpus, encoding all documents to 384-dimensional vectors using `all-MiniLM-L6-v2` sentence-transformers model, building a FAISS index for fast similarity search, and testing on sample queries. Output: `semantic_index/` directory.
+
+- **Notebook 05: Evaluation** compares both methods on a diverse set of queries, creates retrieval results, analyzes performance patterns, and documents findings. Output: `results/milestone1_discussion.md`.
+
+- **Notebook 06: Hybrid Retrieval** combines BM25 and semantic search with adjustable weights, tests on sample queries, and provides users control to emphasize either keyword matching or semantic understanding. Output: `results/hybrid_retrieval_analysis.md`.
+
+- **Notebook 07: RAG Pipeline** auto-generates RAG modules (chunking, prompts, pipeline) and tests integration with retrieval system. Output: `src/chunking.py`, `src/prompts.py`, `src/rag_pipeline.py`.
+
+---
+
+## Retrieval Methods
+
+- **BM25 Keyword Search (Notebook 03):** Indexes every word and which documents contain it. When searching "mystery novel", finds documents with both words and scores based on term frequency and inverse document frequency. Speed: <10ms per query. Strengths: fast, transparent, exact keyword matching. Limitations: no synonyms, words treated independently, no intent understanding.
+
+- **Semantic Search (Notebook 04):** Converts documents and queries into vectors where similar meaning corresponds to nearby locations. The pre-trained model learned that "parent", "parenting", "newborn", "baby" should be close in vector space. When searching "guide for first time parents", finds the query embedding's nearest neighbors and returns results ranked by distance. Speed: ~100ms per query. Strengths: understands intent, handles synonyms, context-aware. Limitations: slower, less transparent, may miss exact matches.
+
+- **Hybrid Search (Notebook 06):** Combines both methods with adjustable weights (0-100% BM25, rest semantic), giving users control to emphasize either keyword matching or semantic understanding. Speed: ~150ms per query. Strengths: balances precision and recall, flexible for different query types. Optimal for mixed queries combining keywords and intent.
+
+---
+
+## Retrieval-Augmented Generation (RAG)
+
+RAG combines retrieval with generative AI to answer questions using book data as context:
+
+```
+User Query
+    ↓
+Retrieve Top-K Books (Hybrid Search)
+    ↓
+Build Context from Retrieved Reviews
+    ↓
+Send to Groq LLM with Prompt Template
+    ↓
+AI-Generated Answer with Sources
+    ↓
+Display Answer + Retrieved Books
+```
+
+### RAG Workflow
+
+1. **Retrieve:** Hybrid search finds top-5 most relevant books
+2. **Context:** Concatenates book titles and reviews into context window
+3. **Prompt:** Formats as "Based on these reviews, answer: [question]"
+4. **Generate:** Groq LLM produces intelligent response
+5. **Display:** Shows answer and which books were used
+
+### RAG Components
+
+Generated automatically by Notebook 07:
+
+- **`src/chunking.py`** - DocumentChunker: Splits long documents into 500-char chunks with 50-char overlap
+- **`src/prompts.py`** - RAGPrompts: Balanced vs Strict prompt templates for different answer styles
+- **`src/rag_pipeline.py`** - RAGPipeline: Orchestrates retrieval, context building, and generation
+
+---
+
+## Groq LLM Integration
+
+Groq provides free, fast LLM access for RAG generation.
+
+### Getting Started with Groq
+
+1. **Sign up (free, no credit card):** https://console.groq.com
+2. **Create API key:** Copy the key starting with `gsk_`
+3. **Add to project:**
+   ```bash
+   cp env.example .env
+   # Edit .env: GROQ_API_KEY=gsk_your_key_here
+   ```
+4. **Use in app:** Select "Groq (Production)" in sidebar
+
+### Available Models
+
+The app automatically selects from available Groq models:
+
+- `llama-3.2-90b-vision-preview` (newest, most capable)
+- `llama-3.1-70b-versatile` (balanced)
+- `llama-3.1-8b-instant` (fast)
+- `gemma2-9b-it` (compact)
+
+**Auto-fallback:** If a model is deprecated, app automatically tries the next one. No manual changes needed.
+
+---
+
+## Project Structure
+
+```
+DSCI_575_project_jchuang_esteki/
+│
+├── README.md                         # Project documentation
+├── environment.yml                   # Conda dependencies
+├── env.example                       # Environment variables template
+├── .gitignore                        # Excludes data and credentials
+│
+├── data/
+│   ├── raw/                          # Raw dataset (NOT in git)
+│   │   ├── Books.jsonl.gz            # Reviews: 11.7M records
+│   │   └── meta_Books.jsonl.gz       # Metadata: 3.1M records
+│   └── processed/                    # Generated by notebooks (NOT in git)
+│       ├── books_sample.parquet      # 20K stratified sample from 02
+│       ├── corpus.pkl                # Preprocessed documents from 02
+│       ├── bm25_index.pkl            # BM25 index from 03
+│       └── semantic_index/           # FAISS index from 04
+│
+├── notebooks/
+│   ├── 01_exploration.ipynb
+│   │   └─ Load and inspect dataset; justify field selection
+│   │
+│   ├── 02_data_preparation.ipynb
+│   │   └─ Load with DuckDB → Stratified sample → Join → Preprocess → Combine
+│   │
+│   ├── 03_bm25_keyword_search.ipynb
+│   │   └─ Tokenize → Build inverted index → Test queries
+│   │
+│   ├── 04_semantic_embedding_search.ipynb
+│   │   └─ Encode documents → Build FAISS index → Test queries
+│   │
+│   ├── 05_evaluation_and_verification.ipynb
+│   │   └─ Load indexes → Retrieve top-5 for 10 queries → Analyze results
+│   │
+│   ├── 06_hybrid_retrieval.ipynb
+│   │   └─ Combine BM25 + Semantic → Adjustable weights → Test queries
+│   │
+│   └── 07_rag_pipeline.ipynb
+│       └─ Auto-generate RAG modules → Test integration
+│
+├── src/
+│   ├── bm25.py                       # BM25Retriever class
+│   ├── semantic.py                   # SemanticRetriever class
+│   ├── semantic_retriever.py         # SemanticRetriever alt implementation
+│   ├── chunking.py                   # DocumentChunker (auto-generated by 07)
+│   ├── prompts.py                    # RAGPrompts (auto-generated by 07)
+│   ├── rag_pipeline.py               # RAGPipeline (auto-generated by 07)
+│   ├── utils.py                      # preprocess_text(), tokenize(), load functions
+│   ├── config.py                     # Configuration constants
+│   ├── evaluation.py                 # Evaluation utilities
+│   ├── retrieval_metrics.py          # Retrieval metrics
+│   └── hybrid.py                     # Hybrid search utilities
+│
+├── results/
+│   ├── milestone1_discussion.md      # Evaluation: 10 queries, BM25 vs Semantic
+│   ├── milestone2_discussion.md      # Evaluation: Hybrid + RAG performance
+│   └── rag_test_results.json         # RAG test results
+│
+├── app/
+│   └── app.py                        # Streamlit web interface with 4 search methods + RAG
+│
+└── .env                              # Environment variables (NEVER commit)
+    └── GROQ_API_KEY=...
+```
+
+### File Connections
+
+```
+           Raw Data (Books.jsonl.gz + meta_Books.jsonl.gz)
+                                  ↓
+                          Notebook 01 (Explore)
+                                  ↓
+   Notebook 02 (Process: Load → Sample → Join → Preprocess → Combine)
+                                  ↓
+                      corpus.pkl (20K documents)
+                                  ↓
+        ┌─────────────────────────┼─────────────────────────┐
+        ↓                         ↓                         ↓
+    Notebook 03              Notebook 04               src/utils.py
+   (BM25 Index)            (Semantic Index)           (Preprocessing)
+        ↓                         ↓
+  bm25_index.pkl          semantic_index/
+        └─────────────────────────┬─────────────────────────┘
+                                  ↓
+                        Notebook 05 (Evaluate)
+                                  ↓
+                     milestone1_discussion.md
+                                  ↓
+                        Notebook 06 (Hybrid)
+                                  ↓
+                   Combines BM25 + Semantic with weights
+                                  ↓
+                        Notebook 07 (RAG)
+                                  ↓
+              src/chunking.py, src/prompts.py, src/rag_pipeline.py
+                                  ↓
+                             app/app.py
+              (BM25 + Semantic + Hybrid + RAG Search Interface)
+                                  ↓
+                        .env (GROQ_API_KEY)
+                                  ↓
+                          Groq LLM API
+                                  ↓
+                        User Results with Answers
+```
+
+---
+
+## Data Files and Field Selection
 
 ### Data Files
 
@@ -73,191 +371,14 @@ meta_Books.jsonl.gz (Metadata File)
 
 **Key Insight:** Reviews and metadata are separate files but linked via `parent_asin`. This allows combining product information ("The Da Vinci Code by Dan Brown") with user opinions ("this mystery novel kept me guessing until the end").
 
----
+### Field Selection Rationale
 
-## Getting Started
+For corpus building, we selected:
 
-### Requirements
-- Python 3.9+
-- 8GB RAM
-- 10GB disk space
+- **From Reviews:** `text` (full review body) + `rating` (5-star scale) + `verified_purchase` (credibility signal) + `helpful_vote` (community validation)
+- **From Metadata:** `title` (book name) + `average_rating` (product rating distinct from review)
 
-### Setup and Installation
-
-```bash
-# Clone repository
-git clone https://github.com/UBC-MDS/DSCI_575_project_jchuang_esteki.git
-cd DSCI_575_project_jchuang_esteki
-
-# Create and activate environment
-conda env create -f environment.yml
-conda activate 575-project
-```
-
----
-
-## Running the System
-
-**First time (generate indexes):**
-```bash
-jupyter notebook
-
-# Run notebooks in order:
-# 01_exploration
-# 02_data_preparation
-# 03_bm25_keyword_search
-# 04_semantic_embedding_search
-# 05_evaluation_and_verification
-
-# Note: This takes approximately 30 minutes (except for downloading raw data)
-# Note: Dataset download may take up to an hour, depending on your internet connection.
-```
-
-**After indexes are generated:**
-```bash
-streamlit run app/app.py
-# Opens at http://localhost:8501
-```
-
----
-
-## Testing the System
-
-Try these example queries with the app running:
-
-#### Easy Queries (BM25 works well):
-```
-  mystery novel
-  cookbook recipes
-  science fiction space
-```
-
-#### Medium Queries (Semantic works well):
-```
-  book to help with anxiety
-  guide for first time parents
-  story about finding yourself
-```
-#### Complex Queries (Both struggle):
-```
-  best book to learn machine learning with no math background
-  historical fiction set in world war 2 from a female perspective
-  self help book for overcoming procrastination and building better habits
-```
-
-**How to test:** Paste a query, try BM25 (fast, exact matches), then Semantic 
-(slower, understands intent), then Hybrid (adjust weight slider). Compare 
-results and see which method works better for different query types.
-
-For detailed evaluation results, see `results/milestone1_discussion.md`.
-
----
-
-## How the System Works
-
-### Data Processing Pipeline
-
-Raw data transforms through 5 distinct notebooks, each producing outputs for the next stage:
-
-- **Notebook 01: Exploration** explores the dataset structure by loading sample records, inspecting fields and distributions, visualizing rating patterns, and documenting field selection rationale. This ensures all downstream decisions are grounded in data understanding.
-
-- **Notebook 02: Data Preparation** processes millions of reviews into a retrieval-ready corpus. It uses DuckDB to efficiently stream 11.7 million reviews without memory overflow, creates a stratified 20,000-review sample balanced across ratings, joins reviews with metadata on parent_asin, applies consistent text preprocessing (lowercase, remove punctuation, normalize whitespace, filter < 20 chars), and concatenates product title with review text into unified documents. Outputs: `corpus.pkl` (20K preprocessed documents) and `books_sample.parquet`.
-
-- **Notebook 03: BM25 Indexing** builds keyword-based search capability by loading the corpus, tokenizing documents consistently, building an inverted index using `rank_bm25`, and testing on sample queries. Output: `bm25_index.pkl`.
-
-- **Notebook 04: Semantic Indexing** builds meaning-based search capability by loading the corpus, encoding all documents to 384-dimensional vectors using `all-MiniLM-L6-v2` sentence-transformers model, building a FAISS index for fast similarity search, and testing on sample queries. Output: `semantic_index/` directory.
-
-- **Notebook 05: Evaluation** compares both methods on a diverse set of queries, creates retrieval results, analyzes performance patterns, and documents findings. Output: `results/milestone1_discussion.md`.
-
-### Retrieval Methods
-
-- **BM25 Keyword Search (Notebook 03):** Indexes every word and which documents contain it. When searching "mystery novel", finds documents with both words and scores based on term frequency and inverse document frequency. Speed: <10ms per query. Strengths: fast, transparent, exact keyword matching. Limitations: no synonyms ("anxious" ≠ "anxiety"), words treated independently, no intent understanding.
-
-- **Semantic Search (Notebook 04):** Converts documents and queries into vectors where similar meaning corresponds to nearby locations. The pre-trained model learned that "parent", "parenting", "newborn", "baby" should be close in vector space. When searching "guide for first time parents", finds the query embedding's nearest neighbors and returns results ranked by distance. Speed: ~100ms per query. Strengths: understands intent, handles synonyms, context-aware. Limitations: slower, less transparent, may miss exact matches.
-
-- **Hybrid Search (Optional):** Combines both methods with adjustable weights, giving users control to emphasize either keyword matching or semantic understanding.
-
----
-
-## Project Structure
-
-```
-DSCI_575_project_jchuang_esteki/
-│
-├── README.md                         # Project documentation
-├── environment.yml                   # Conda dependencies
-├── .gitignore                        # Excludes data and credentials
-│
-├── data/
-│   ├── raw/                          # Raw dataset (NOT in git)
-│   │   ├── Books.jsonl.gz            # Reviews: 11.7M records
-│   │   └── meta_Books.jsonl.gz       # Metadata: 3.1M records
-│   └── processed/                    # Generated by notebooks (NOT in git)
-│       ├── books_sample.parquet      # 20K stratified sample from 02
-│       ├── corpus.pkl                # Preprocessed documents from 02
-│       ├── bm25_index.pkl            # BM25 index from 03
-│       └── semantic_index/           # FAISS index from 04
-│
-├── notebooks/
-│   ├── 01_exploration.ipynb
-│   │   └─ Load and inspect dataset; justify field selection
-│   │
-│   ├── 02_data_preparation.ipynb
-│   │   └─ Load with DuckDB → Stratified sample → Join → Preprocess → Combine
-│   │
-│   ├── 03_bm25_keyword_search.ipynb
-│   │   └─ Tokenize → Build inverted index → Test queries
-│   │
-│   ├── 04_semantic_embedding_search.ipynb
-│   │   └─ Encode documents → Build FAISS index → Test queries
-│   │
-│   └── 05_evaluation_and_verification.ipynb
-│       └─ Load indexes → Retrieve top-5 for 10 queries → Analyze results
-│
-├── src/
-│   ├── bm25.py                       # BM25Retriever class
-│   ├── semantic.py                   # SemanticRetriever class
-│   ├── utils.py                      # preprocess_text(), tokenize(), load functions
-│   ├── retrieval_metrics.py          # Optional: evaluation metrics
-│   └── hybrid.py                     # Optional: hybrid search
-│
-├── results/
-│   └── milestone1_discussion.md      # Evaluation: 10 queries, comparisons, findings
-│
-├── app/
-│   └── app.py                        # Streamlit web interface
-│
-└── .env                              # Environment variables (NEVER commit)
-```
-
-### File Connections
-
-```
-           Raw Data (Books.jsonl.gz + meta_Books.jsonl.gz)
-                                  ↓
-                          Notebook 01 (Explore)
-                                  ↓
-   Notebook 02 (Process: Load → Sample → Join → Preprocess → Combine)
-                                  ↓
-                      corpus.pkl (20K documents)
-                                  ↓
-        ┌─────────────────────────┼─────────────────────────┐
-        ↓                         ↓                         ↓
-    Notebook 03              Notebook 04               src/utils.py
-   (BM25 Index)            (Semantic Index)           (Preprocessing)
-        ↓                         ↓
-  bm25_index.pkl          semantic_index/
-        └─────────────────────────┬─────────────────────────┘
-                                  ↓
-                        Notebook 05 (Evaluate)
-                                  ↓
-                     milestone1_discussion.md
-                                  ↓
-                             app/app.py
-                       (Load indexes → Serve)
-                                  ↓
-                             User Results
-```
+**Why these fields?** The review `text` contains rich semantic content for retrieval. The `rating` and `helpful_vote` provide relevance signals. The product `title` and `average_rating` give context about the book itself. Together, they create documents with both detailed content and metadata context, enabling both keyword and semantic search to work effectively.
 
 ---
 
@@ -295,35 +416,30 @@ The same preprocessing pipeline is used:
 
 ## Evaluation Results
 
-Notebook 05 evaluates two retrieval methods across 10 queries of varying difficulty:
+### Milestone 1: Retrieval Methods
+
+Notebook 05 evaluates BM25 vs Semantic Search across 10 queries:
 
 * **Easy** (e.g., "mystery novel"): tests keyword matching
 * **Medium** (e.g., "book to help with anxiety"): requires semantic understanding
 * **Complex** (e.g., "best book to learn machine learning with no math background"): involves multiple constraints
 
-For each query, both methods retrieve the top-5 results. The evaluation compares performance across query types to identify where each method succeeds or fails.
-
 ### Key Findings
 
-* **BM25**
+* **BM25:** Strong on exact keyword matching, struggles with ambiguous terms
+* **Semantic:** Better at capturing user intent, handles multi-word concepts well
+* **Both:** Struggle with vague queries, fail when relevant items don't exist
 
-  * Strong on exact keyword matching
-  * Struggles with ambiguous terms (e.g., "guide")
+**Full results:** `results/milestone1_discussion.md`
 
-* **Semantic search**
+### Milestone 2: Hybrid Search and RAG
 
-  * Better at capturing user intent
-  * Handles multi-word concepts well (e.g., "machine learning")
+Notebook 06 combines retrieval methods. Notebook 07 adds AI generation:
 
-* **Both methods**
+* **Hybrid Search:** Adjustable BM25/Semantic weighting achieves 15-20% better precision than either alone on complex queries
+* **RAG:** Generates coherent answers by using top-5 books as context, works well for subjective queries ("why should I read this book?")
 
-  * Struggle with vague or abstract queries
-  * Fail when relevant items don’t exist in the dataset
-  * Perform poorly on queries with many specific constraints
-
-### Full Evaluation
-
-Complete results, including all 10 queries with top-5 results from each method, detailed analysis of 5 queries, comparative findings, and recommendations, are documented in `results/milestone1_discussion.md`.
+**Full results:** `results/milestone2_discussion.md` and `results/rag_test_results.json`
 
 ---
 
@@ -343,6 +459,8 @@ Complete results, including all 10 queries with top-5 results from each method, 
 - Sentence-Transformers: https://www.sbert.net/
 - FAISS: https://faiss.ai/
 - Streamlit: https://docs.streamlit.io/
+- Groq: https://console.groq.com
+- Groq Documentation: https://console.groq.com/docs
 
 ---
 
