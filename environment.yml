@@ -23,6 +23,9 @@ dependencies:
   
   # Python packages via pip
   - pip:
+    # Data processing and efficiency
+    - duckdb>=0.9.0
+    
     # Information Retrieval
     - rank-bm25>=0.2.1
     - sentence-transformers>=2.2.0
