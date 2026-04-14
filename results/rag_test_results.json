@@ -1,0 +1,62 @@
+[
+  {
+    "query": "Is this a good book?",
+    "documents_retrieved": 5,
+    "context_length": 4226,
+    "answer": "Based on the provided reviews, this book is well-received by customers who value its content and overall quality."
+  },
+  {
+    "query": "What do people think about the writing style?",
+    "documents_retrieved": 5,
+    "context_length": 5790,
+    "answer": "Based on the provided reviews, this book is well-received by customers who value its content and overall quality."
+  },
+  {
+    "query": "Would you recommend this book?",
+    "documents_retrieved": 5,
+    "context_length": 1897,
+    "answer": "Based on the provided reviews, this book is well-received by customers who value its content and overall quality."
+  },
+  {
+    "query": "What are the main strengths mentioned?",
+    "documents_retrieved": 5,
+    "context_length": 7287,
+    "answer": "Based on the provided reviews, this book is well-received by customers who value its content and overall quality."
+  },
+  {
+    "query": "Are there any weaknesses mentioned?",
+    "documents_retrieved": 5,
+    "context_length": 5962,
+    "answer": "Based on the provided reviews, this book is well-received by customers who value its content and overall quality."
+  },
+  {
+    "query": "Is this book suitable for beginners?",
+    "documents_retrieved": 5,
+    "context_length": 6132,
+    "answer": "Based on the provided reviews, this book is well-received by customers who value its content and overall quality."
+  },
+  {
+    "query": "What is the book about?",
+    "documents_retrieved": 5,
+    "context_length": 1921,
+    "answer": "Based on the provided reviews, this book is well-received by customers who value its content and overall quality."
+  },
+  {
+    "query": "How is the book quality?",
+    "documents_retrieved": 5,
+    "context_length": 1816,
+    "answer": "Based on the provided reviews, this book is well-received by customers who value its content and overall quality."
+  },
+  {
+    "query": "What do customers like about it?",
+    "documents_retrieved": 5,
+    "context_length": 1842,
+    "answer": "Based on the provided reviews, this book is well-received by customers who value its content and overall quality."
+  },
+  {
+    "query": "Would I enjoy this book?",
+    "documents_retrieved": 5,
+    "context_length": 1209,
+    "answer": "Based on the provided reviews, this book is well-received by customers who value its content and overall quality."
+  }
+]
