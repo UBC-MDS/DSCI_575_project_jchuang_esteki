@@ -43,6 +43,9 @@ dependencies:
     # Web Application
     - streamlit>=1.28.0
     
+    # LLM Integration
+    - groq>=0.4.0
+    
     # Jupyter & Notebooks
     - jupyter>=1.0.0
     - notebook>=7.0.0

@@ -1,22 +1,19 @@
-
 class RAGPrompts:
-    """RAG prompt templates."""
+    """RAG prompt templates for different answer styles."""
 
-    BALANCED = """You are a helpful assistant answering questions about books based on customer reviews.
+    BALANCED = """Based on the following book reviews and information, answer the question.
 
-Based on the reviews below, answer the user's question. Be concise and helpful.
-
-Context from reviews:
+Context:
 {context}
 
 Question: {question}
 
 Answer:"""
 
-    STRICT = """Answer ONLY using information from the provided reviews.
-Do not use any other knowledge. If the answer is not in the reviews, say so.
+    STRICT = """Using ONLY the provided book reviews and information below, answer the question.
+If the information is insufficient to answer, say so.
 
-Reviews:
+Context:
 {context}
 
 Question: {question}
@@ -24,6 +21,10 @@ Question: {question}
 Answer:"""
 
     @staticmethod
-    def get_template(version="balanced"):
-        templates = {"balanced": RAGPrompts.BALANCED, "strict": RAGPrompts.STRICT}
+    def get_template(version: str = "balanced") -> str:
+        """Get prompt template by version name."""
+        templates = {
+            "balanced": RAGPrompts.BALANCED,
+            "strict": RAGPrompts.STRICT
+        }
         return templates.get(version.lower(), RAGPrompts.BALANCED)

@@ -5,8 +5,14 @@ from pathlib import Path
 from typing import List, Tuple, Dict
 import sys
 import pickle
+import os
+from dotenv import load_dotenv
 
-project_root = Path(__file__).parent.parent
+load_dotenv()
+
+app_dir = Path(__file__).parent
+project_root = app_dir.parent
+
 sys.path.insert(0, str(project_root))
 
 from src.bm25 import BM25Retriever
@@ -16,15 +22,61 @@ from src.utils import load_data, load_corpus
 
 
 class SimpleLLM:
-    """Simple LLM wrapper for Milestone 2 demo."""
+    """Simple LLM for demo - always available."""
     def invoke(self, text: str) -> str:
-        return "Based on the provided reviews, this book appears to be well-received by customers who value its content, writing style, and overall quality. Readers particularly appreciate books that are informative, engaging, and provide clear value."
+        return "Based on the provided reviews, this book appears to be well-received by customers who value its content, writing style, and overall quality."
+
+
+class GroqLLM:
+    """Groq API - with model fallback for deprecation."""
+    AVAILABLE_MODELS = [
+        "llama-3.2-90b-vision-preview",
+        "llama-3.1-70b-versatile",
+        "llama-3.1-8b-instant",
+        "gemma2-9b-it",
+        "mixtral-8x7b-32768"
+    ]
+    
+    def __init__(self, api_key: str = None, model: str = None):
+        try:
+            from groq import Groq
+            self.api_key = api_key or os.getenv("GROQ_API_KEY")
+            if not self.api_key:
+                raise ValueError("GROQ_API_KEY not found in .env file")
+            self.client = Groq(api_key=self.api_key)
+            self.model = model or "llama-3.2-90b-vision-preview"
+            self.available = True
+        except ImportError:
+            self.available = False
+    
+    def invoke(self, text: str) -> str:
+        if not self.available:
+            return "Groq library not installed. Run: pip install groq"
+        
+        models_to_try = [self.model] + [m for m in self.AVAILABLE_MODELS if m != self.model]
+        
+        for model in models_to_try:
+            try:
+                response = self.client.chat.completions.create(
+                    messages=[{"role": "user", "content": text}],
+                    model=model,
+                    max_tokens=500,
+                    temperature=0.7
+                )
+                return response.choices[0].message.content
+            except Exception as e:
+                error_msg = str(e)
+                if "decommissioned" in error_msg or "not supported" in error_msg:
+                    continue
+                else:
+                    return f"Error: {error_msg}"
+        
+        return "All available models failed. Try SimpleLLM mode or check your API key."
 
 
 @st.cache_resource
 def load_retrieval_system():
-    """Load indexes, corpus, and RAG pipeline on app startup."""
-    project_root = Path(__file__).parent.parent
+    """Load all components."""
     data_dir = project_root / "data" / "processed"
     
     try:
@@ -53,334 +105,268 @@ def load_retrieval_system():
     return df, corpus, bm25, semantic, rag_pipeline
 
 
-def normalize_scores(scores: List[float], method: str = "minmax") -> List[float]:
-    """Normalize scores to 0-1 range for display."""
+def normalize_scores(scores: List[float]) -> List[float]:
+    """Normalize scores."""
     if not scores:
         return scores
     scores = np.array(scores)
-    if method == "minmax":
-        min_val, max_val = scores.min(), scores.max()
-        if max_val == min_val:
-            return [0.5] * len(scores)
-        return ((scores - min_val) / (max_val - min_val)).tolist()
-    return scores.tolist()
+    min_val, max_val = scores.min(), scores.max()
+    if max_val == min_val:
+        return [0.5] * len(scores)
+    return ((scores - min_val) / (max_val - min_val)).tolist()
 
 
-def hybrid_search(
-    query: str,
-    bm25_retriever: BM25Retriever,
-    semantic_retriever: SemanticRetriever,
-    top_k: int = 5,
-    bm25_weight: float = 0.5,
-    semantic_weight: float = 0.5
-) -> List[Tuple[int, float]]:
-    """Combine BM25 and semantic search results."""
+def hybrid_search(query: str, bm25_retriever, semantic_retriever, top_k: int = 5, bm25_weight: float = 0.5):
+    """Hybrid search combining BM25 and semantic."""
     bm25_results = bm25_retriever.search(query, top_k=top_k)
     semantic_results = semantic_retriever.search(query, top_k=top_k)
     
     bm25_dict = {idx: score for idx, score in bm25_results}
     semantic_dict = {idx: score for idx, score in semantic_results}
-    
     all_indices = set(bm25_dict.keys()) | set(semantic_dict.keys())
     
-    bm25_normalized = normalize_scores(list(bm25_dict.values()), "minmax")
-    semantic_normalized = normalize_scores(
-        [1 / (1 + d) for d in semantic_dict.values()], "minmax"
-    )
+    bm25_normalized = normalize_scores(list(bm25_dict.values()))
+    semantic_normalized = normalize_scores([1 / (1 + d) for d in semantic_dict.values()])
     
-    bm25_dict_norm = {
-        idx: bm25_normalized[i] for i, idx in enumerate(bm25_dict.keys())
-    }
-    semantic_dict_norm = {
-        idx: semantic_normalized[i] for i, idx in enumerate(semantic_dict.keys())
-    }
+    bm25_dict_norm = {idx: bm25_normalized[i] for i, idx in enumerate(bm25_dict.keys())}
+    semantic_dict_norm = {idx: semantic_normalized[i] for i, idx in enumerate(semantic_dict.keys())}
     
+    semantic_weight = 1.0 - bm25_weight
     hybrid_scores = {}
     for idx in all_indices:
         bm25_score = bm25_dict_norm.get(idx, 0)
         semantic_score = semantic_dict_norm.get(idx, 0)
-        hybrid_scores[idx] = (
-            bm25_weight * bm25_score + semantic_weight * semantic_score
-        )
+        hybrid_scores[idx] = bm25_weight * bm25_score + semantic_weight * semantic_score
     
     sorted_results = sorted(hybrid_scores.items(), key=lambda x: x[1], reverse=True)
     return sorted_results[:top_k]
 
 
-def display_result(
-    rank: int,
-    doc_id: int,
-    title: str,
-    review_text: str,
-    rating: float,
-    score: float,
-    method: str
-):
-    """Display a single search result with formatting."""
+def display_book_result(rank: int, doc_id: int, df: pd.DataFrame, score: float = 0, method: str = ""):
+    """Display book with metadata and score."""
+    if doc_id >= len(df) or doc_id < 0:
+        return
+    
+    row = df.iloc[doc_id]
+    title = row.get("product_title", "Unknown")
+    review_text = row.get("text", "")
+    rating = row.get("rating", 0)
+    
     with st.container(border=True):
-        col1, col2 = st.columns([0.15, 0.85])
-        with col1:
-            st.markdown(f"### #{rank}")
-        with col2:
-            st.markdown(f"#### {title}")
+        col_rank, col_title = st.columns([0.08, 0.92])
+        with col_rank:
+            st.markdown(f"<div style='font-size: 18px; font-weight: bold; color: #1f77b4;'>{rank}</div>", unsafe_allow_html=True)
+        with col_title:
+            st.markdown(f"<div style='font-size: 16px; font-weight: 600;'>{title}</div>", unsafe_allow_html=True)
         
-        col_a, col_b = st.columns([0.7, 0.3])
-        with col_a:
-            review_display = (
-                review_text[:200] + "..."
-                if len(review_text) > 200
-                else review_text
+        st.markdown("---")
+        
+        col_review, col_meta = st.columns([0.7, 0.3])
+        with col_review:
+            review_display = (review_text[:250] + "..." if len(review_text) > 250 else review_text) if review_text else "(No review)"
+            st.caption(review_display)
+        with col_meta:
+            st.metric("Review Rating", f"{rating}/5.0", label_visibility="collapsed")
+        
+        col_score, col_id = st.columns(2)
+        with col_score:
+            if score > 0:
+                if method == "semantic":
+                    st.caption(f"Distance: {score:.4f}")
+                elif method == "bm25":
+                    st.caption(f"BM25 Score: {score:.2f}")
+                elif method == "hybrid":
+                    st.caption(f"Hybrid Score: {score:.3f}")
+        with col_id:
+            st.caption(f"Book ID: {doc_id}")
+
+
+def setup_groq_sidebar():
+    """Configure Groq LLM in sidebar."""
+    st.sidebar.markdown("### LLM Configuration")
+    st.sidebar.markdown("---")
+    
+    llm_choice = st.sidebar.radio(
+        "Select LLM",
+        ["SimpleLLM (Demo)", "Groq (Production)"],
+        help="SimpleLLM always works. Groq requires API key in .env file."
+    )
+    
+    if llm_choice == "Groq (Production)":
+        st.sidebar.markdown("**Groq Setup**")
+        
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            st.sidebar.warning(
+                "⚠️ GROQ_API_KEY not found\n\n"
+                "1. Get key: https://console.groq.com\n"
+                "2. Create .env: GROQ_API_KEY=your_key\n"
+                "3. Restart app"
             )
-            st.caption(f"__{review_display}__")
-        with col_b:
-            st.metric("Rating", f"{rating}/5", label_visibility="collapsed")
+            return "simple", None
         
-        col_x, col_y = st.columns(2)
-        with col_x:
-            if method == "semantic":
-                st.caption(f"Distance: {score:.4f}")
-            else:
-                st.caption(f"Score: {score:.2f}")
-        with col_y:
-            st.caption(f"Doc ID: {doc_id}")
-
-
-def display_rag_result(result: Dict, df: pd.DataFrame):
-    """Display RAG result with retrieved documents and generated answer."""
-    with st.container(border=True):
-        st.markdown("### Generated Answer")
-        st.info(result['answer'])
+        st.sidebar.success("✓ API key loaded")
+        st.sidebar.info("⚡ Using auto-fallback model selection")
         
-        with st.expander(f"Retrieved Documents ({result['documents_retrieved']})"):
-            st.caption(f"Context length: {result['context_length']} characters")
-            
-            if 'retrieved_docs' in result:
-                for i, doc_id in enumerate(result['retrieved_docs'], 1):
-                    if doc_id < len(df):
-                        row = df.iloc[doc_id]
-                        st.markdown(f"**Document {i}** - {row.get('title', 'Unknown')}")
-                        st.caption(row.get('text', '')[:300] + "...")
+        return "groq", api_key
+    
+    return "simple", None
 
 
 def main():
-    st.set_page_config(
-        page_title="Amazon Books Retrieval - Milestone 2",
-        page_icon="book",
-        layout="wide",
-        initial_sidebar_state="expanded"
-    )
+    """Main app."""
+    st.set_page_config(page_title="Amazon Books Retrieval", page_icon="📚", layout="wide")
     
-    st.title("Amazon Books Retrieval System")
-    st.markdown("Milestone 2: **BM25**, **Semantic**, **Hybrid**, and **RAG** Retrieval")
+    st.markdown("""
+    <style>
+    .main-header { font-size: 2.5em; font-weight: 700; }
+    .subtitle { font-size: 1.1em; color: #666; margin-bottom: 1.5em; }
+    .badge { display: inline-block; padding: 0.5em 1em; border-radius: 20px; font-weight: 600; }
+    .badge-bm25 { background-color: #FF6B6B; color: white; }
+    .badge-semantic { background-color: #4ECDC4; color: white; }
+    .badge-hybrid { background-color: #45B7D1; color: white; }
+    .badge-rag { background-color: #96CEB4; color: white; }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    st.markdown('<div class="main-header">📚 Amazon Books Retrieval System</div>', unsafe_allow_html=True)
+    st.markdown('<div class="subtitle">Milestone 2: Multi-Modal Search with RAG</div>', unsafe_allow_html=True)
+    
+    llm_type, groq_key = setup_groq_sidebar()
+    
+    st.markdown("---")
+    st.markdown("### Search")
+    
+    col_input, col_btn = st.columns([0.92, 0.08])
+    with col_input:
+        query = st.text_input("Enter search query", placeholder="E.g., 'machine learning for beginners'", label_visibility="collapsed")
+    with col_btn:
+        search_button = st.button("Search", use_container_width=True, type="primary")
+    
+    if not query.strip() and search_button:
+        st.warning("Please enter a search query")
+        return
+    
+    st.markdown("---")
+    
+    tab_bm25, tab_semantic, tab_hybrid, tab_rag, tab_about = st.tabs(["BM25", "Semantic", "Hybrid", "RAG", "About"])
     
     try:
         df, corpus, bm25_retriever, semantic_retriever, rag_pipeline = load_retrieval_system()
     except Exception as e:
-        st.error(f"Error loading retrieval system: {e}")
-        st.info(
-            "Make sure you've run all data preparation notebooks and have "
-            "the processed files in `data/processed/` (corpus.pkl, bm25_index.pkl, semantic_index/)"
-        )
+        st.error(f"Error loading system: {e}")
         return
     
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(
-        ["BM25", "Semantic", "Hybrid", "RAG", "About"]
-    )
-    
-    query_input = st.text_input(
-        "Search Query",
-        placeholder="E.g., 'machine learning for beginners' or 'self-help for anxiety'",
-        help="Enter your search query"
-    )
-    
-    col1, col2 = st.columns([0.85, 0.15])
-    with col2:
-        search_button = st.button("Search", use_container_width=True)
-    
-    with tab1:
-        st.header("BM25 Keyword Search")
-        st.markdown("Fast keyword matching using term frequency and document length normalization.")
+    with tab_bm25:
+        st.markdown("<span class='badge badge-bm25'>BM25</span> Keyword Search", unsafe_allow_html=True)
+        st.markdown("Fast exact-match retrieval using term frequency scoring.")
+        top_k = st.slider("Results", 1, 10, 5, key="bm25_k")
         
-        col_a, col_b = st.columns(2)
-        with col_a:
-            top_k_bm25 = st.slider("Top K Results", 1, 10, 5, key="bm25_k")
-        
-        if search_button and query_input.strip():
+        if search_button and query.strip():
             try:
-                with st.spinner("Searching with BM25..."):
-                    results = bm25_retriever.search(query_input, top_k=top_k_bm25)
-                
+                with st.spinner("Searching..."):
+                    results = bm25_retriever.search(query, top_k=top_k)
                 st.success(f"Found {len(results)} results")
-                st.divider()
-                
+                st.markdown("---")
                 for rank, (doc_id, score) in enumerate(results, 1):
-                    if doc_id < len(df):
-                        row = df.iloc[doc_id]
-                        title = row.get("title", "Unknown")
-                        review_text = row.get("text", "")
-                        rating = row.get("rating", 0)
-                        
-                        display_result(rank, doc_id, title, review_text, rating, score, "bm25")
-            
+                    display_book_result(rank, doc_id, df, score, method="bm25")
             except Exception as e:
                 st.error(f"Search error: {e}")
-        elif search_button and not query_input.strip():
-            st.warning("Please enter a search query")
     
-    with tab2:
-        st.header("Semantic Embedding Search")
-        st.markdown("Meaning-aware search using sentence embeddings (all-MiniLM-L6-v2).")
+    with tab_semantic:
+        st.markdown("<span class='badge badge-semantic'>Semantic</span> Meaning-Based Search", unsafe_allow_html=True)
+        st.markdown("Embedding-based search that understands semantic meaning and synonyms.")
+        top_k = st.slider("Results", 1, 10, 5, key="semantic_k")
         
-        col_a, col_b = st.columns(2)
-        with col_a:
-            top_k_semantic = st.slider("Top K Results", 1, 10, 5, key="semantic_k")
-        
-        if search_button and query_input.strip():
+        if search_button and query.strip():
             try:
-                with st.spinner("Searching with Semantic embeddings..."):
-                    results = semantic_retriever.search(query_input, top_k=top_k_semantic)
-                
+                with st.spinner("Searching..."):
+                    results = semantic_retriever.search(query, top_k=top_k)
                 st.success(f"Found {len(results)} results")
-                st.divider()
-                
+                st.markdown("---")
                 for rank, (doc_id, distance) in enumerate(results, 1):
-                    if doc_id < len(df):
-                        row = df.iloc[doc_id]
-                        title = row.get("title", "Unknown")
-                        review_text = row.get("text", "")
-                        rating = row.get("rating", 0)
-                        
-                        display_result(rank, doc_id, title, review_text, rating, distance, "semantic")
-            
+                    display_book_result(rank, doc_id, df, distance, method="semantic")
             except Exception as e:
                 st.error(f"Search error: {e}")
-        elif search_button and not query_input.strip():
-            st.warning("Please enter a search query")
     
-    with tab3:
-        st.header("Hybrid Retrieval")
-        st.markdown("Combines BM25 and semantic search with weighted scoring.")
+    with tab_hybrid:
+        st.markdown("<span class='badge badge-hybrid'>Hybrid</span> Combined Search", unsafe_allow_html=True)
+        st.markdown("Balances keyword precision with semantic understanding.")
+        col_k, col_w = st.columns(2)
+        with col_k:
+            top_k = st.slider("Results", 1, 10, 5, key="hybrid_k")
+        with col_w:
+            bm25_weight = st.slider("BM25 Weight", 0.0, 1.0, 0.5, step=0.1)
         
-        col_a, col_b, col_c = st.columns([1, 1, 1])
-        with col_a:
-            top_k_hybrid = st.slider("Top K Results", 1, 10, 5, key="hybrid_k")
-        with col_b:
-            bm25_weight = st.slider("BM25 Weight", 0.0, 1.0, 0.5, step=0.1, key="bm25_w")
-        with col_c:
-            semantic_weight = 1.0 - bm25_weight
-            st.metric("Semantic Weight", f"{semantic_weight:.1f}", label_visibility="collapsed")
-        
-        if search_button and query_input.strip():
+        if search_button and query.strip():
             try:
-                with st.spinner("Searching with Hybrid approach..."):
-                    results = hybrid_search(
-                        query_input,
-                        bm25_retriever,
-                        semantic_retriever,
-                        top_k=top_k_hybrid,
-                        bm25_weight=bm25_weight,
-                        semantic_weight=semantic_weight
-                    )
-                
+                with st.spinner("Searching..."):
+                    results = hybrid_search(query, bm25_retriever, semantic_retriever, top_k=top_k, bm25_weight=bm25_weight)
                 st.success(f"Found {len(results)} results")
-                st.divider()
-                
+                st.markdown("---")
                 for rank, (doc_id, score) in enumerate(results, 1):
-                    if doc_id < len(df):
-                        row = df.iloc[doc_id]
-                        title = row.get("title", "Unknown")
-                        review_text = row.get("text", "")
-                        rating = row.get("rating", 0)
-                        
-                        display_result(rank, doc_id, title, review_text, rating, score, "hybrid")
-            
+                    display_book_result(rank, doc_id, df, score, method="hybrid")
             except Exception as e:
                 st.error(f"Search error: {e}")
-        elif search_button and not query_input.strip():
-            st.warning("Please enter a search query")
     
-    with tab4:
-        st.header("RAG: Retrieval-Augmented Generation")
-        st.markdown("Hybrid retrieval + LLM generation for question answering over book reviews.")
+    with tab_rag:
+        st.markdown("<span class='badge badge-rag'>RAG</span> Question Answering", unsafe_allow_html=True)
+        st.markdown("Retrieval-augmented generation: finds books and generates AI answer.")
         
-        col_a, col_b, col_c = st.columns([1, 1, 1])
-        with col_a:
-            top_k_rag = st.slider("Top K Documents", 1, 10, 5, key="rag_k")
-        with col_b:
-            prompt_version = st.selectbox("Prompt Version", ["balanced", "strict"], key="prompt_v")
+        col_k, col_p = st.columns(2)
+        with col_k:
+            top_k = st.slider("Top Books", 1, 10, 5, key="rag_k")
+        with col_p:
+            prompt_version = st.selectbox("Prompt Style", ["balanced", "strict"])
         
-        st.info("SimpleLLM (demo) - Use Qwen or Groq for production")
-        
-        if search_button and query_input.strip():
+        if search_button and query.strip():
             try:
-                with st.spinner("Running RAG pipeline..."):
-                    result = rag_pipeline.invoke(query_input, top_k=top_k_rag)
+                with st.spinner("Generating answer..."):
+                    if llm_type == "groq" and groq_key:
+                        llm = GroqLLM(api_key=groq_key)
+                        rag_pipeline.llm = llm
+                    
+                    result = rag_pipeline.invoke(query, top_k=top_k)
                 
-                st.success("RAG generation complete")
-                st.divider()
+                st.success("Answer generated")
+                st.markdown("---")
                 
-                display_rag_result(result, df)
+                st.markdown("#### Generated Answer")
+                st.info(result.get('answer', 'No answer'))
+                
+                st.markdown("#### Retrieved Books")
+                
+                retrieved_ids = result.get('retrieved_doc_ids', [])
+                with st.expander(f"Show {len(retrieved_ids)} source documents"):
+                    if retrieved_ids and len(retrieved_ids) > 0:
+                        st.markdown("---")
+                        for i, doc_id in enumerate(retrieved_ids, 1):
+                            display_book_result(i, doc_id, df, 0, method="")
+                    else:
+                        st.caption("No documents retrieved")
             
             except Exception as e:
-                st.error(f"RAG error: {e}")
-                st.info("Make sure src/rag_pipeline.py, src/prompts.py, and src/chunking.py are generated")
-        elif search_button and not query_input.strip():
-            st.warning("Please enter a question for RAG")
+                st.error(f"RAG Error: {e}")
     
-    with tab5:
-        st.header("About This System")
-        
-        st.markdown("### Milestone 2 Features")
+    with tab_about:
+        st.markdown("### System Overview")
         st.markdown("""
-        #### Retrieval Methods
-        
-        **1. BM25 (Keyword Search)**
-        - Fast, exact keyword matching using Okapi BM25
-        - Best for: Simple queries with specific terms
-        - Pros: Fast, interpretable, requires no training
-        - Cons: Struggles with semantic meaning
-        
-        **2. Semantic Search (Embeddings)**
-        - Meaning-aware search using sentence embeddings
-        - Model: all-MiniLM-L6-v2 from HuggingFace
-        - Best for: Complex, intent-based queries; synonyms
-        - Pros: Understands semantic relationships
-        - Cons: Slower; requires good training data
-        
-        **3. Hybrid Retrieval**
-        - Combines BM25 and semantic with weighted scoring
-        - Configurable weights for different use cases
-        - Best for: Balanced precision and recall
-        - Pros: Leverages strengths of both methods
-        - Cons: Slightly slower than BM25 alone
-        
-        **4. RAG (Retrieval-Augmented Generation)**
-        - Hybrid retrieval + LLM for question answering
-        - Uses document chunking for context management
-        - Includes prompt templates (balanced/strict)
-        - Best for: Questions requiring synthesis of multiple reviews
-        - Pros: Natural language answers, context-aware
-        - Cons: Depends on LLM quality
-        
-        #### Dataset
-        - **Source**: Amazon Reviews 2023 (Books)
-        - **Size**: 20,000 stratified samples
-        - **Fields**: Book title + review text + rating
-        
-        #### Architecture
-        - Corpus enrichment: Title + rating + reviews
-        - Chunking: 500 character chunks, 50 char overlap
-        - Max context: 2000 tokens per RAG query
-        - LLM: SimpleLLM (demo) / Qwen / Groq (production)
-        """)
-        
-        st.markdown("### Performance Tips")
-        st.markdown("""
-        - **BM25**: Use for keyword-heavy queries
-        - **Semantic**: Best for conceptual questions
-        - **Hybrid**: Default choice for most queries
-        - **RAG**: Use for complex questions needing synthesis
-        """)
+**4 Search Methods:**
+- BM25: Keyword matching
+- Semantic: Meaning-based
+- Hybrid: Both combined
+- RAG: AI-powered answers
+
+**Groq Integration:**
+Auto-fallback to available models
+Models tested: 5 latest versions
+
+**Getting Started:**
+1. https://console.groq.com (free)
+2. Create .env with GROQ_API_KEY
+3. Select Groq mode
+4. Done!
+""")
 
 
 if __name__ == "__main__":
