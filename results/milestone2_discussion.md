@@ -1,58 +1,266 @@
-# Milestone 2: RAG Pipeline Complete
+# Milestone 2: RAG Pipeline Discussion
 
-## System Architecture
+---
 
-### Retrieval
-- Hybrid: BM25 (keyword) + Semantic (embedding)
-- Strategy: Union of top-5 from each
+## 1. File Structure and README
 
-### Generation
-- LLM: SimpleLLM (demo)
-- Prompts: Balanced and Strict versions
+### 1.1 File Structure
 
-### Context
-- Chunking: 500 char chunks, 50 char overlap
-- Max: 2000 tokens
+All required files are present in the correct locations:
 
-## Test Results
+- `README.md` - project root
+- `src/rag_pipeline.py` - RAGPipeline class
+- `src/hybrid.py` - HybridRetriever class
+- `notebooks/07_rag_pipeline.ipynb` - RAG pipeline notebook (used as the milestone2_rag notebook)
+- `results/milestone2_discussion.md` - this file
+- `app/app.py` - Streamlit web app
 
-Total queries: 10
+### 1.2 Updated README
 
-Summary:
+The README includes:
 
-Query 1: Is this a good book? - 5 docs retrieved
-Query 2: What do people think about the writing style? - 5 docs retrieved
-Query 3: Would you recommend this book? - 5 docs retrieved
-Query 4: What are the main strengths mentioned? - 5 docs retrieved
-Query 5: Are there any weaknesses mentioned? - 5 docs retrieved
-Query 6: Is this book suitable for beginners? - 5 docs retrieved
-Query 7: What is the book about? - 5 docs retrieved
-Query 8: How is the book quality? - 5 docs retrieved
-Query 9: What do customers like about it? - 5 docs retrieved
-Query 10: Would I enjoy this book? - 5 docs retrieved
+- Project description and dataset overview
+- Model choice for RAG (LLaMA 3.2 90B via Groq API)
+- RAG workflow with semantic retriever description
+- Hybrid RAG workflow description
+- Instructions to run the app locally
 
-## Key Achievements
+---
 
-1. Hybrid retrieval working (BM25 + Semantic)
-2. Document chunking implemented
-3. RAG pipeline complete
-4. 10 queries tested successfully
-5. Evaluation report generated
+## 2. Build LLM Pipeline
 
-## Production Path
+### 2.1 Working Model Pipeline
 
-Next: Replace SimpleLLM with:
-- Local: Qwen/Qwen3.5-0.8B
-- Cloud: Groq llama-3.1-8b
+The LLM is defined as the `GroqLLM` class in `app/app.py`. It calls the Groq API with a fallback chain across models (`llama-3.2-90b-vision-preview` → `llama-3.1-70b-versatile` → `llama-3.1-8b-instant` → `gemma2-9b-it`). A `SimpleLLM` placeholder is available when no API key is set.
 
-## Files Generated
+The pipeline is initialized in `src/rag_pipeline.py` and accepts any LLM object with an `.invoke(prompt)` method.
 
-- src/chunking.py
-- src/prompts.py
-- src/rag_pipeline.py
-- results/rag_test_results.json
-- results/milestone2_discussion.md
+### 2.2 Model Choice and Rationale
 
-## Conclusion
+We use **LLaMA 3.2 90B** via the **Groq API**.
 
-Milestone 2 complete. RAG system ready for deployment.
+**Model family:** LLaMA 3.2 is Meta's instruction-tuned open-source series, suited for prompt-following and open-ended question answering over review text. Alternatives like Phi-4-mini (better for math/code) or Qwen3.5 (requires local compute) are less appropriate for this task.
+
+**Model size:** 90B is the largest model available on Groq's free tier, giving the best generation quality without needing a local GPU.
+
+---
+
+## 3. RAG with Semantic Search
+
+### 3.1 Vector Store Retriever
+
+Implemented as the `SemanticRetriever` class in `src/semantic_retriever.py`, built in `notebooks/04_semantic_embedding_search.ipynb`.
+
+- Uses FAISS for approximate nearest-neighbour search
+- Embeddings: `all-MiniLM-L6-v2` (384-dim sentence-transformers)
+- Index saved to `data/processed/semantic_index/`
+- Returns a ranked list of top-k (doc_id, distance) pairs (default k=5, minimum k=3)
+
+### 3.2 Context Building
+
+Implemented as `RAGPipeline.build_context()` in `src/rag_pipeline.py`.
+
+- Prepends "Review N:" label to each retrieved document
+- Concatenates documents in ranked order up to a 2,000-token word-count limit
+- Includes review text (the primary content) from each retrieved document
+- `DocumentChunker` in `src/chunking.py` (500-char chunks, 50-char overlap) is available to split long reviews
+
+### 3.3 Prompt Template Design
+
+Two prompt templates are implemented in `src/prompts.py` as the `RAGPrompts` class.
+
+**Balanced (default):**
+
+```text
+Based on the following book reviews and information, answer the question.
+
+Context:
+{context}
+
+Question: {question}
+
+Answer:
+```
+
+*Observation:* Produces fluent answers. The model may add background knowledge not grounded in the reviews. Good for open-ended queries.
+
+**Strict:**
+
+```text
+Using ONLY the provided book reviews and information below, answer the question.
+If the information is insufficient to answer, say so.
+
+Context:
+{context}
+
+Question: {question}
+
+Answer:
+```
+
+*Observation:* More conservative. The model declines to speculate when context is insufficient, but can give overly terse answers when context is sufficient.
+
+Both templates include the retrieved context (`{context}`) and the user question (`{question}`). The Balanced template acts as a system prompt framing the task; the Strict template adds an explicit constraint on the model's knowledge use.
+
+### 3.4 RAG Pipeline
+
+Implemented as the `RAGPipeline` class in `src/rag_pipeline.py`, auto-generated by `notebooks/07_rag_pipeline.ipynb`.
+
+The `invoke(query, top_k)` method runs the full pipeline:
+
+1. Calls `retrieve_hybrid()` to fetch top-k documents via `HybridRetriever`
+2. Calls `build_context()` to assemble the context block
+3. Formats the prompt using the selected template
+4. Calls `llm.invoke(prompt)` and returns the answer
+
+Returns a dict with `answer`, `retrieved_doc_ids`, `documents_retrieved`, and `context_length`.
+
+**Workflow diagram:** included in `README.md` under the "Retrieval-Augmented Generation (RAG)" section. Flow: User Query → Hybrid Retrieval → Context Building → Prompt Template → LLM → Answer.
+
+---
+
+## 4. RAG with Semantic Search + BM25
+
+### 4.1 BM25 Retrieval
+
+Implemented as the `BM25Retriever` class in `src/bm25.py`, auto-generated by `notebooks/03_bm25_keyword_search.ipynb`.
+
+- Uses Okapi BM25 via the `rank_bm25` library
+- Index built over all 18,314 documents, saved to `data/processed/bm25_index.pkl`
+- Returns a ranked list of top-k (doc_id, score) pairs (default k=5)
+
+### 4.2 Hybrid Retriever
+
+Implemented as the `HybridRetriever` class in `src/hybrid.py`, auto-generated by `notebooks/06_hybrid_retrieval.ipynb`.
+
+- Combines BM25 and semantic retrievers using **round-robin interleaving**
+- Alternates picking from the BM25 and semantic ranked lists, deduplicating as it goes, until top-k results are collected
+- Ensures both methods are represented in the final result set
+- Returns a ranked list of (doc_id, source) tuples where source is `'BM25'`, `'Semantic'`, or `'BM25 + Semantic'`
+
+### 4.3 RAG Pipeline with Hybrid Retriever
+
+`RAGPipeline` in `src/rag_pipeline.py` uses `HybridRetriever` internally. All retrieval is delegated to `self.hybrid.search()`, which returns ranked results from both BM25 and semantic search. The context is built from this ranked hybrid result set and passed to the LLM via the prompt template.
+
+---
+
+## 5. Qualitative Evaluation of the Hybrid RAG
+
+Five queries spanning Easy, Medium, and Complex difficulty were run through the Hybrid RAG pipeline in `notebooks/07_rag_pipeline.ipynb` and manually rated.
+
+| Dimension | Definition |
+|---|---|
+| Accuracy | Is the answer factually correct based on the retrieved reviews? |
+| Completeness | Does the answer address all aspects of the question? |
+| Fluency | Is the answer natural and easy to read? |
+
+Ratings: Yes / Partial / No.
+
+---
+
+### Query 1 [Easy]: "cookbook recipes"
+
+Five relevant cookbooks retrieved. The LLM compared books by complexity and audience, drawing from review text rather than giving generic advice.
+
+**Retrieved books:** Crock Pot: 1001 Best Recipes (1.0★), My Very First Cookbook (5.0★), From Crook to Cook (5.0★), Healthy Cookbook for Two (3.0★), Instant Pot Cookbook 2020 (4.0★)
+
+| Accuracy | Completeness | Fluency |
+|---|---|---|
+| Yes | Yes | Yes |
+
+*Note:* The LLM synthesised across reviews rather than just listing titles.
+
+---
+
+### Query 2 [Easy]: "python programming"
+
+Five relevant Python books retrieved. The LLM noted skill level differences and attributed each point to a specific review.
+
+**Retrieved books:** Core Python Programming (3.0★), Creative Coding in Python (5.0★), Data Science from Scratch (5.0★), Invent Your Own Computer Games with Python (5.0★), Python for Informatics (4.0★)
+
+| Accuracy | Completeness | Fluency |
+|---|---|---|
+| Yes | Yes | Yes |
+
+*Note:* Retrieval and generation both performed well. The answer is actionable for users at different skill levels.
+
+---
+
+### Query 3 [Medium]: "book to help with anxiety"
+
+The hybrid retriever surfaced *Mastery of Your Anxiety and Worry: Workbook* and *Peaceful Piggy Meditation* alongside three off-topic results. The LLM identified the relevant titles despite the noisy context.
+
+**Retrieved books:** Please Explain Alzheimer's Disease to Me (5.0★), Mastery of Your Anxiety and Worry: Workbook (4.0★), I'm a Homeowner, Now What? (5.0★), Peaceful Piggy Meditation (5.0★), Quiet Power (5.0★)
+
+| Accuracy | Completeness | Fluency |
+|---|---|---|
+| Partial | Partial | Yes |
+
+*Note:* Accuracy is partial due to slightly incorrect ratings in the answer. Completeness is partial because three retrieved documents are off-topic.
+
+---
+
+### Query 4 [Medium]: "guide for first time parents"
+
+BM25 returned a math guide (misled by "guide"), but the semantic component recovered *Slow and Steady Get Me Ready* and *Self-Love Workbook for First-Time Moms*. The LLM correctly distinguished the most relevant book from the rest.
+
+**Retrieved books:** Math on Call Parent Guide (5.0★), Family First (5.0★), God Gave Us You (5.0★), Slow and Steady Get Me Ready (5.0★), Self-Love Workbook for First-Time Moms (5.0★)
+
+| Accuracy | Completeness | Fluency |
+|---|---|---|
+| Yes | Yes | Yes |
+
+*Note:* Shows the value of hybrid retrieval. The semantic component recovered parenting books that BM25 missed entirely.
+
+---
+
+### Query 5 [Complex]: "historical fiction set in world war 2 from a female perspective"
+
+The semantic retriever returned five relevant WW2 novels. The LLM correctly identified the female-perspective titles and cited supporting evidence from the reviews.
+
+**Retrieved books:** The Forgotten Village (5.0★), The Girl from Berlin (4.0★), The Little Ships (5.0★), Girl at War (5.0★), Love in a Time of War (4.0★)
+
+| Accuracy | Completeness | Fluency |
+|---|---|---|
+| Yes | Yes | Yes |
+
+*Note:* Strongest result overall. The semantic retriever handled the multi-attribute query well, and the LLM correctly applied both constraints.
+
+---
+
+### RAG Performance Discussion
+
+Fluency is consistently high across all queries. Answer quality is driven by retrieval quality: when retrieved documents are relevant (Queries 1, 2, 5), the LLM produces complete, accurate answers. Query 4 shows the benefit of hybrid retrieval, where the semantic component recovered results BM25 missed. On Query 3, the LLM still identified the relevant subset despite noisy retrieved documents.
+
+### Limitations
+
+1. **Retrieval noise.** Mixed-relevance results (Query 3) dilute the context. Without re-ranking, noisy documents get equal weight to relevant ones.
+
+2. **Corpus coverage.** The 18,314-document sample does not cover all query types. Some queries cannot be answered regardless of retrieval strategy.
+
+### Suggestions for Improvement
+
+- **Add a re-ranker** after hybrid retrieval to filter noisy documents before building the context.
+- **Expand corpus coverage** with structured metadata (genre, author) to improve precision on multi-attribute queries.
+
+---
+
+## 6. Web App
+
+The app is in `app/app.py` (Streamlit). It includes:
+
+- A text input field for user queries
+- Four tabs to switch between retrieval modes: **BM25**, **Semantic**, **Hybrid**, and **RAG**
+- Search results showing book title and rating
+- RAG tab shows the generated answer above the list of source documents
+- Sidebar to switch between SimpleLLM (demo) and Groq (production) and select prompt style (Balanced/Strict)
+
+Instructions to run the app locally are in `README.md`.
+
+---
+
+## 7. Submission and Collaboration
+
+- GitHub Release v0.2.0 to be created before submission
+- Gradescope submission includes repository link
+- All team members have contributed commits
