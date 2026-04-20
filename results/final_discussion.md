@@ -42,11 +42,61 @@ Recommendation:
 
 #### Results
 
-<!-- TODO: paste the 5-query side-by-side outputs from notebook 08 here -->
+Five queries were run across three difficulty levels. Both models received identical retrieved context and the same `RECOMMENDATION` prompt template. Full outputs are in `notebooks/08_llm_comparison.ipynb`.
+
+---
+
+**Query 1 (Easy): "mystery novel"**
+
+Retrieved: Chase For Home, S., The Bookseller, Fast Track, Sister Innocent
+
+> **LLaMA 3.3 70B:** Recommended 4 books with a brief justification for each drawn from review text. Notably excluded "S." and explained why (poor reviews).
+>
+> **LLaMA 3.1 8B:** Also recommended 4 books but went into more detail per title, including a note about verified vs. unverified reviews for Sister Innocent.
+
+---
+
+**Query 2 (Medium): "book to help with anxiety"**
+
+Retrieved: Adult Coloring Book (Stress Relieving), Guided Mindfulness Meditation Series 1, I'll Be Home Soon, Journey to the Heart, Complete Reiki
+
+> **LLaMA 3.3 70B:** Recommended 4 books with clear, grounded explanations. Connected each book to anxiety relief with specific detail from the reviews (e.g. "helped their daughter with severe anxiety").
+>
+> **LLaMA 3.1 8B:** Recommended 3 of the same books but missed the coloring book entirely. Also incorrectly recommended "I'll Be Home Soon" which is about separation anxiety in pets, not humans.
+
+---
+
+**Query 3 (Complex): "best book to learn machine learning with no math background"**
+
+Retrieved: Python Machine Learning (2nd Ed.), Hand-Manipulated Stitches for Machine Knitters, Deep Learning, My First Grade Math Workbook, Data Mining
+
+> **LLaMA 3.3 70B:** Correctly identified only one relevant book (Python Machine Learning), dismissed the off-topic results by name, and explained why the others were unsuitable. Concise and accurate.
+>
+> **LLaMA 3.1 8B:** Recommended Python Machine Learning, then invented a "third edition" that does not appear in the reviews. Also drifted into generic advice ("look for books that provide step-by-step examples") not grounded in the retrieved context.
+
+---
+
+**Query 4 (Complex): "historical fiction set in world war 2 from a female perspective"**
+
+Retrieved: The Forgotten Village, The Women's War, To the Last Man, War Girl Ursula, Up the Learning Tree
+
+> **LLaMA 3.3 70B:** Identified two relevant books (The Forgotten Village, War Girl Ursula) and flagged War Girl Ursula as the stronger match due to its explicit female protagonist. Correctly ignored off-topic titles.
+>
+> **LLaMA 3.1 8B:** Reached the same two recommendations with similar reasoning. Responses were nearly equivalent on this query.
+
+---
+
+**Query 5 (Complex): "self help book for overcoming procrastination and building better habits"**
+
+Retrieved: Atomic Habits Workbook, The P.R.I.M.E.R. Goal Setting Method, YOU ARE WONDERFUL (coloring book), The Success Principles, Life's Healing Choices
+
+> **LLaMA 3.3 70B:** Recommended 3 relevant books, correctly ignored the coloring book and Life's Healing Choices. Explanations were grounded in review text.
+>
+> **LLaMA 3.1 8B:** Recommended the same 3 books with similar reasoning. Response was cut off mid-sentence before completing the final thought.
 
 #### Which Model We Chose and Why
 
-<!-- TODO: fill in after reviewing results -->
+We chose **LLaMA 3.3 70B** (`llama-3.3-70b-versatile`) as the default model for our pipeline. Across the five queries, it consistently gave more grounded and complete responses, sticking to the retrieved context rather than making things up. The 8B model struggled on harder queries, most notably inventing a book edition that was not in the reviews and drifting into generic advice. The 70B model also handled noisy retrieval better, correctly filtering out off-topic results and explaining why they were excluded. Given that we are already using the Groq API, the cost difference between the two is negligible, so the quality improvement makes the 70B model the clear choice.
 
 ## Step 2: Additional Feature (state which option you chose)
 
