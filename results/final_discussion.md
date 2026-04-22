@@ -33,7 +33,7 @@ Both models run via the Groq API. The full side-by-side comparison is in `notebo
 
 #### Prompt Used
 
-Both models were given identical retrieved context and the same prompt template — the `BALANCED` template defined in `src/prompts.py`:
+Both models were given identical retrieved context and the same prompt template, the `BALANCED` template defined in `src/prompts.py`:
 
 ```text
 Based on the following book reviews and information, answer the question.
