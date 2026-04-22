@@ -16,7 +16,7 @@ class SemanticRetriever:
         """Encode corpus and build FAISS index."""
         self.corpus = corpus
         print(f"Encoding {len(corpus)} documents...")
-        embeddings = self.model.encode(corpus, show_progress_bar=True, batch_size=32)
+        embeddings = self.model.encode(corpus, show_progress_bar=True, batch_size=128)
         embeddings = embeddings.astype('float32')
 
         self.index = faiss.IndexFlatL2(embeddings.shape[1])

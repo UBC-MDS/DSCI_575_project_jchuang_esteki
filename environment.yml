@@ -5,48 +5,45 @@ channels:
 dependencies:
   # Core Python
   - python=3.11
-  
+
   # Data processing
   - pandas>=2.0.0
   - numpy>=1.24.0
-  - scipy>=1.10.0
   - matplotlib>=3.7.0
-  
-  # Text processing
-  - nltk>=3.8.0
-  
+
   # System utilities
   - requests>=2.31.0
-  
+
   # Package manager
   - pip
-  
+
   # Python packages via pip
   - pip:
-    # Data processing and efficiency
-    - duckdb>=0.9.0
-    
-    # Information Retrieval
-    - rank-bm25>=0.2.1
-    - sentence-transformers>=2.2.0
-    - faiss-cpu>=1.8.0
-    
-    # Utilities
-    - python-dotenv>=1.0.0
-    - scikit-learn>=1.3.0
-    - tqdm>=4.66.0
-    
-    # Optional: Framework support
-    - langchain>=0.1.0
-    - langchain-community>=0.0.1
-    
-    # Web Application
-    - streamlit>=1.28.0
-    
-    # LLM Integration
-    - groq>=0.4.0
-    
-    # Jupyter & Notebooks
-    - jupyter>=1.0.0
-    - notebook>=7.0.0
-    - ipykernel>=6.25.0
+      # Deep Learning (only torch, torchvision/audio not used)
+      - torch>=2.0.0
+
+      # Transformers pinned <5.0 to avoid noisy __path__ deprecation warnings
+      - transformers>=4.30.0,<5.0
+      - sentence-transformers>=2.2.0
+
+      # Data processing
+      - duckdb>=0.9.0
+
+      # Information Retrieval
+      - rank-bm25>=0.2.2
+      - faiss-cpu>=1.8.0
+
+      # Utilities
+      - python-dotenv>=1.0.0
+      - tqdm>=4.66.0
+
+      # Web Application
+      - streamlit>=1.28.0
+
+      # LLM Integration
+      - groq>=0.4.0
+
+      # Jupyter & Notebooks
+      - jupyter>=1.0.0
+      - notebook>=7.0.0
+      - ipykernel>=6.25.0
