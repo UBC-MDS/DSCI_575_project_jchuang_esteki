@@ -33,24 +33,24 @@ Both models run via the Groq API. The full side-by-side comparison is in `notebo
 
 #### Prompt Used
 
-Both models were given identical retrieved context and the following `RECOMMENDATION` prompt template (defined in `src/prompts.py`):
+Both models were given identical retrieved context and the same prompt template — the `BALANCED` template defined in `src/prompts.py`:
 
 ```text
-You are a helpful book recommendation assistant. Based on the following book reviews, recommend books that match the user's request. For each book, briefly explain why it fits based on the reviews.
+Based on the following book reviews and information, answer the question.
 
 Context:
 {context}
 
-User request: {question}
+Question: {question}
 
-Recommendation:
+Answer:
 ```
 
 Both models used `max_tokens=300` and `temperature=0.3` for a fair comparison.
 
 #### Results
 
-Five queries were run across three difficulty levels on the 110,167-document corpus. Both models received identical retrieved context from the hybrid retriever and the same `RECOMMENDATION` prompt template. Full outputs are in `notebooks/08_llm_comparison.ipynb`.
+Five queries were run across three difficulty levels on the 110,167-document corpus. Both models received identical retrieved context from the hybrid retriever and the same `BALANCED` prompt template. Full outputs are in `notebooks/08_llm_comparison.ipynb`.
 
 **Query 1 (Easy): "mystery novel"**
 
@@ -220,8 +220,8 @@ flowchart TB
 
 ### Architectural Justification
 
-- **S3 for all storage** — durable, cheap at rest, DuckDB and pandas can read directly from it, and the 170 MB FAISS + 180 MB BM25 + 60 MB corpus footprint is trivial in S3 terms. Raw data can tier to Glacier via a lifecycle rule while hot processed and index artifacts stay in Standard.
-- **Elastic Beanstalk over raw EC2 or Lambda** — retrieval needs the FAISS index in memory (≈170 MB) so Lambda cold starts are too expensive, and raw EC2 adds operational work (deploys, health checks) that Elastic Beanstalk abstracts. `t3.medium` is enough because heavy LLM work is offloaded.
-- **Groq API over self-hosted LLM** — GPU instances for a 70B model would cost orders of magnitude more than Groq's managed tier for our expected load; we also avoid model-ops work (quantization, serving stack, scaling).
-- **Batch re-indexing over streaming updates** — fits the nature of a review corpus (updated periodically by McAuley Lab, not continuously), and lets us promote fully verified index versions atomically rather than risk a partially updated index under live traffic.
-- **Secrets Manager for `GROQ_API_KEY`** — avoids committing secrets to git and rotates cleanly without a redeploy.
+- **S3 for all storage:** durable, cheap at rest, DuckDB and pandas can read directly from it, and the 170 MB FAISS + 180 MB BM25 + 60 MB corpus footprint is trivial in S3 terms. Raw data can tier to Glacier via a lifecycle rule while hot processed and index artifacts stay in Standard.
+- **Elastic Beanstalk over raw EC2 or Lambda:** retrieval needs the FAISS index in memory (≈170 MB) so Lambda cold starts are too expensive, and raw EC2 adds operational work (deploys, health checks) that Elastic Beanstalk abstracts. `t3.medium` is enough because heavy LLM work is offloaded.
+- **Groq API over self-hosted LLM:** GPU instances for a 70B model would cost orders of magnitude more than Groq's managed tier for our expected load; we also avoid model-ops work (quantization, serving stack, scaling).
+- **Batch re-indexing over streaming updates:** fits the nature of a review corpus (updated periodically by McAuley Lab, not continuously), and lets us promote fully verified index versions atomically rather than risk a partially updated index under live traffic.
+- **Secrets Manager for `GROQ_API_KEY`:** avoids committing secrets to git and rotates cleanly without a redeploy.
