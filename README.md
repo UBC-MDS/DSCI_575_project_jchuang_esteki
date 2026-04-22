@@ -497,15 +497,6 @@ Notebook 08 compares LLaMA 3.3 70B vs LLaMA 3.1 8B on 5 queries. The full datase
 
 ---
 
-## Team
-
-| Name | Role |
-|------|------|
-| Johnson Chuang | Semantic Search & Integration |
-| Hooman Esteki | Data Processing & BM25 Implementation |
-
----
-
 ## References and Resources
 
 - Dataset: https://amazon-reviews-2023.github.io/
