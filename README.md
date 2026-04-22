@@ -25,7 +25,6 @@ A retrieval system combining **BM25 keyword-based search**, **semantic embedding
 - [Data Files and Field Selection](#data-files-and-field-selection)
 - [Text Preprocessing](#text-preprocessing)
 - [Evaluation Results](#evaluation-results)
-- [Team](#team)
 - [References and Resources](#references-and-resources)
 - [License](#license)
 
