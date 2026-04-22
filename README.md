@@ -182,7 +182,7 @@ Raw data transforms through the following notebooks, each producing outputs for 
 
 - **Notebook 07: RAG Pipeline** auto-generates RAG modules (chunking, prompts, pipeline) and tests integration with the retrieval system. Output: `src/chunking.py`, `src/prompts.py`, `src/rag_pipeline.py`.
 
-- **Notebook 08: LLM Comparison** runs the same five queries through LLaMA 3.3 70B and LLaMA 3.1 8B (via Groq) using identical retrieved context and the same `RECOMMENDATION` prompt. Results and the selected default are documented in `results/final_discussion.md`.
+- **Notebook 08: LLM Comparison** runs the same five queries through LLaMA 3.3 70B and LLaMA 3.1 8B (via Groq) using identical retrieved context and the same `BALANCED` prompt template (`src/prompts.py`). Results and the selected default are documented in `results/final_discussion.md`.
 
 ---
 
