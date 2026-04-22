@@ -4,7 +4,7 @@
 
 ### Dataset Scaling
 
-**Number of products used:** the pipeline now samples **120,000 reviews** from the full Amazon Books dataset (11.7M reviews, 3.1M unique products). After preprocessing (dropping reviews under 20 characters, which removed 9,833 entries) the final retrieval corpus contains **110,167 enriched documents** spanning tens of thousands of unique products. Both indexes were rebuilt against this corpus:
+**Number of products used:** the pipeline now samples **120,000 reviews** from the full Amazon Books dataset (11.7M reviews, 4.4M unique products). After preprocessing (dropping reviews under 20 characters, which removed 9,833 entries) the final retrieval corpus contains **110,167 enriched documents** spanning tens of thousands of unique products. Both indexes were rebuilt against this corpus:
 
 - `data/processed/corpus.pkl` (60.81 MB, 110,167 documents)
 - `data/processed/books_sample.parquet` (35.81 MB, 110,167 rows)
