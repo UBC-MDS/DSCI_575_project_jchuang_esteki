@@ -50,7 +50,7 @@ We use the **Amazon Reviews 2023** dataset from UC San Diego's McAuley Lab, cont
 ### Requirements
 - Python 3.11+
 - 16GB RAM
-- 10GB disk space
+- 20GB disk space
 - Groq API key (free tier)
 
 ### Setup and Installation
