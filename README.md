@@ -98,14 +98,14 @@ streamlit run app/app.py
 
 ## Scale and Runtime
 
-The final submission scales the pipeline to 100,000 sampled reviews (Option 3 of the final milestone). After preprocessing (dropping reviews under 20 characters) the retrieval corpus contains **91,850 enriched documents**.
+The final submission scales the pipeline to 120,000 sampled reviews (Option 3 of the final milestone). After preprocessing (dropping 9,833 reviews under 20 characters) the retrieval corpus contains **110,167 enriched documents** spanning tens of thousands of unique products.
 
 ### Sampling Strategy (Two-tier)
 
 `notebooks/02_data_preparation.ipynb` samples directly from the compressed raw file with DuckDB, never loading the full 11.7M reviews into RAM:
 
 1. **Stratified first.** The notebook tries a stratified SQL query that allocates rows proportionally across the 1 to 5 rating buckets.
-2. **Random fallback.** If the stratified query fails on the 11.7M row stream (its `OVER / RANDOM` plan can exhaust DuckDB's working memory), the notebook automatically falls back to `ORDER BY RANDOM() LIMIT 100000`. This is the path that ran on the final 100K build. The resulting rating distribution still matches the natural skew of Amazon book reviews.
+2. **Random fallback.** If the stratified query fails on the 11.7M row stream (its `OVER / RANDOM` plan can exhaust DuckDB's working memory), the notebook automatically falls back to `ORDER BY RANDOM() LIMIT 120000`. This is the path that ran on the final 120K build. The resulting rating distribution still matches the natural skew of Amazon book reviews.
 
 ### Expected Runtime on a 16 GB laptop
 
@@ -121,10 +121,14 @@ The final submission scales the pipeline to 100,000 sampled reviews (Option 3 of
 
 | File | Size |
 |---|---|
-| `data/processed/corpus.pkl` | ~51 MB |
-| `data/processed/books_sample.parquet` | ~30 MB |
-| `data/processed/bm25_index.pkl` | ~150 MB |
-| `data/processed/semantic_index/faiss_index` | ~140 MB |
+| `data/processed/corpus.pkl` | ~61 MB |
+| `data/processed/books_sample.parquet` | ~36 MB |
+| `data/processed/bm25_index.pkl` | ~180 MB |
+| `data/processed/semantic_index/faiss_index` | ~170 MB |
+
+### Active Retriever Note
+
+`src/semantic_retriever.py` is the retriever actually used by `app/app.py`, `notebooks/04_semantic_embedding_search.ipynb`, and `notebooks/08_llm_comparison.ipynb`. It sets `batch_size=128` at encode time. `src/semantic.py` is the earlier equivalent class kept for backward compatibility.
 
 ---
 
@@ -167,7 +171,7 @@ Raw data transforms through the following notebooks, each producing outputs for 
 
 - **Notebook 01: Exploration** explores the dataset structure by loading sample records, inspecting fields and distributions, visualizing rating patterns, and documenting field selection rationale.
 
-- **Notebook 02: Data Preparation** processes the 11.7M Books reviews into a retrieval-ready corpus. It uses DuckDB to stream the compressed file without memory overflow, samples 100,000 reviews using a stratified query with a random-sample fallback (see the Scale and Runtime section), joins reviews with product metadata on `parent_asin`, applies consistent text preprocessing, and concatenates product title with review text into unified documents. Outputs: `corpus.pkl` (91,850 preprocessed documents) and `books_sample.parquet`.
+- **Notebook 02: Data Preparation** processes the 11.7M Books reviews into a retrieval-ready corpus. It uses DuckDB to stream the compressed file without memory overflow, samples 120,000 reviews using a stratified query with a random-sample fallback (see the Scale and Runtime section), joins reviews with product metadata on `parent_asin`, applies consistent text preprocessing, and concatenates product title with review text into unified documents. Outputs: `corpus.pkl` (110,167 preprocessed documents) and `books_sample.parquet`.
 
 - **Notebook 03: BM25 Indexing** builds keyword-based search capability by loading the corpus, tokenizing documents consistently, building an inverted index using `rank_bm25`, and testing on sample queries. Output: `bm25_index.pkl`.
 
@@ -252,11 +256,10 @@ The LLM comparison in `notebooks/08_llm_comparison.ipynb` tested **LLaMA 3.3 70B
 
 The Streamlit app (`app/app.py`) wraps the LLM call in an auto-fallback chain so a deprecated or rate-limited model does not break the app:
 
-1. `llama-3.2-90b-vision-preview`
-2. `llama-3.1-70b-versatile`
-3. `llama-3.1-8b-instant`
-4. `gemma2-9b-it`
-5. `mixtral-8x7b-32768`
+1. `llama-3.3-70b-versatile`
+2. `llama-3.1-8b-instant`
+3. `gemma2-9b-it`
+4. `mixtral-8x7b-32768`
 
 If a model returns a `decommissioned` or `not supported` error, the app silently cascades to the next one. This keeps the app resilient to Groq's ongoing model lifecycle without requiring manual config changes.
 
@@ -277,8 +280,8 @@ DSCI_575_project_jchuang_esteki/
 │   │   ├── Books.jsonl.gz            # Reviews: 11.7M records
 │   │   └── meta_Books.jsonl.gz       # Metadata: 3.1M records
 │   └── processed/                    # Generated by notebooks (NOT in git)
-│       ├── books_sample.parquet      # 91,850 sampled reviews from 02
-│       ├── corpus.pkl                # 91,850 preprocessed documents from 02
+│       ├── books_sample.parquet      # 110,167 sampled reviews from 02
+│       ├── corpus.pkl                # 110,167 preprocessed documents from 02
 │       ├── bm25_index.pkl            # BM25 index from 03
 │       └── semantic_index/           # FAISS index from 04
 │
@@ -309,8 +312,8 @@ DSCI_575_project_jchuang_esteki/
 │
 ├── src/
 │   ├── bm25.py                       # BM25Retriever class
-│   ├── semantic.py                   # SemanticRetriever class (batch_size=128)
-│   ├── semantic_retriever.py         # SemanticRetriever alt implementation
+│   ├── semantic.py                   # SemanticRetriever class (alt implementation)
+│   ├── semantic_retriever.py         # SemanticRetriever used by app/notebooks (batch_size=128)
 │   ├── chunking.py                   # DocumentChunker (auto-generated by 07)
 │   ├── prompts.py                    # RAGPrompts (auto-generated by 07)
 │   ├── rag_pipeline.py               # RAGPipeline (auto-generated by 07)
@@ -337,9 +340,9 @@ DSCI_575_project_jchuang_esteki/
                                   ↓
                           Notebook 01 (Explore)
                                   ↓
- Notebook 02 (DuckDB stream → 100K sample w/ fallback → Join → Preprocess → Combine)
+ Notebook 02 (DuckDB stream → 120K sample w/ fallback → Join → Preprocess → Combine)
                                   ↓
-                      corpus.pkl (91,850 documents)
+                     corpus.pkl (110,167 documents)
                                   ↓
         ┌─────────────────────────┼─────────────────────────┐
         ↓                         ↓                         ↓
@@ -488,9 +491,9 @@ Notebook 06 combines retrieval methods. Notebook 07 adds AI generation:
 
 Notebook 08 compares LLaMA 3.3 70B vs LLaMA 3.1 8B on 5 queries. The full dataset-scaling story, LLM comparison, cloud-deployment plan, and code-quality cleanups are in `results/final_discussion.md`.
 
-* **Scale:** Pipeline now processes 100,000 sampled reviews (91,850 docs after preprocessing)
+* **Scale:** Pipeline now processes 120,000 sampled reviews (110,167 docs after preprocessing)
 * **LLM:** LLaMA 3.3 70B chosen as preferred model based on five-query evaluation
-* **Deployment:** AWS deployment plan documented (S3 for storage, Elastic Beanstalk for compute, EventBridge for scheduled rebuilds)
+* **Deployment:** AWS deployment plan documented (S3 for storage, Elastic Beanstalk for compute, EventBridge + AWS Batch for nightly rebuilds)
 
 ---
 

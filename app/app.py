@@ -1,6 +1,6 @@
 """Streamlit app for the Amazon Books Retrieval System.
 
-Provides four search modes over a 91,850-document corpus of Amazon book
+Provides four search modes over a 110,167-document corpus of Amazon book
 reviews: BM25 keyword search, semantic embedding search, weighted hybrid
 search, and retrieval-augmented generation (RAG) via the Groq API.
 """
@@ -296,7 +296,7 @@ def render_about_tab():
     """Render the About tab with a user-facing guide, examples, and system notes."""
     st.markdown("### About This App")
     st.markdown(
-        "This app is a search system over **91,850 Amazon book reviews** "
+        "This app is a search system over **110,167 Amazon book reviews** "
         "(sampled from the 11.7M-review Amazon Books 2023 dataset). It offers "
         "four different ways to find relevant books, each suited to a different "
         "style of query. You can compare their results side by side."
@@ -340,7 +340,7 @@ def render_about_tab():
         st.markdown(
             "**What it does:** encodes the query into a 384-dim vector using "
             "`all-MiniLM-L6-v2` and retrieves the nearest neighbours in a "
-            "FAISS index of 91,850 document embeddings.\n\n"
+            "FAISS index of 110,167 document embeddings.\n\n"
             "**Best for:** paraphrased queries, intent-based searches, cases where "
             "the user does not know the exact words that appear in the review.\n\n"
             "**Example queries:**"
@@ -428,7 +428,7 @@ def render_about_tab():
 
     st.markdown("### Data and Models")
     st.markdown(
-        "- **Corpus:** 91,850 enriched review documents (sampled from 100K reviews, "
+        "- **Corpus:** 110,167 enriched review documents (sampled from 120K reviews, "
         "filtered to entries ≥20 characters). Built by `notebooks/02_data_preparation.ipynb`.\n"
         "- **BM25 index:** Okapi BM25 via `rank_bm25`. Built by `notebooks/03_bm25_keyword_search.ipynb`.\n"
         "- **Semantic index:** `all-MiniLM-L6-v2` embeddings (384-dim) indexed with "
@@ -460,7 +460,7 @@ def main():
 
     st.markdown('<div class="main-header">Amazon Books Retrieval System</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="subtitle">Final Submission: Dual-Method Retrieval with RAG over 91,850 Reviews</div>',
+        '<div class="subtitle">Final Submission: Dual-Method Retrieval with RAG over 110,167 Reviews</div>',
         unsafe_allow_html=True,
     )
 
