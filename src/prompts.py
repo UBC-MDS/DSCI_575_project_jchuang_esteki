@@ -20,21 +20,11 @@ Question: {question}
 
 Answer:"""
 
-    RECOMMENDATION = """You are a helpful book recommendation assistant. Based on the following book reviews, recommend books that match the user's request. For each book, briefly explain why it fits based on the reviews.
-
-Context:
-{context}
-
-User request: {question}
-
-Answer:"""
-
     @staticmethod
     def get_template(version: str = "balanced") -> str:
         """Get prompt template by version name."""
         templates = {
             "balanced": RAGPrompts.BALANCED,
-            "strict": RAGPrompts.STRICT,
-            "recommendation": RAGPrompts.RECOMMENDATION
+            "strict": RAGPrompts.STRICT
         }
         return templates.get(version.lower(), RAGPrompts.BALANCED)
