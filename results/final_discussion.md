@@ -48,6 +48,8 @@ Recommendation:
 
 Five queries were run across three difficulty levels. Both models received identical retrieved context and the same `RECOMMENDATION` prompt template. Full outputs are in `notebooks/08_llm_comparison.ipynb`.
 
+> **Note:** The summaries below were written for the original 20k-product corpus. The pipeline has since been scaled to 100k products (see Step 2), so the retrieved books shown in notebook 08 may differ slightly from what is described here, as the larger corpus and rebuilt indexes are now in place.
+
 **Query 1 (Easy): "mystery novel"**
 
 Retrieved: Chase For Home, S., The Bookseller, Fast Track, Sister Innocent
