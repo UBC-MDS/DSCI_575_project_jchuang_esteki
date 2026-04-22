@@ -4,7 +4,7 @@
 
 A retrieval system combining **BM25 keyword-based search**, **semantic embedding-based search**, and **Retrieval-Augmented Generation (RAG)** to find relevant books from the Amazon Reviews 2023 dataset and generate AI-powered answers using Groq LLM.
 
-![Python 3.11](https://img.shields.io/badge/Python-3.11-blue) ![License MIT](https://img.shields.io/badge/License-MIT-green) ![Status Active](https://img.shields.io/badge/Status-Active-success) ![Final Submission](https://img.shields.io/badge/Final-Submission-blueviolet)
+![Python 3.11](https://img.shields.io/badge/Python-3.11-blue) ![License MIT](https://img.shields.io/badge/License-MIT-green) ![Status Active](https://img.shields.io/badge/Status-Active-success) ![Final Submission](https://img.shields.io/badge/Submission-Final-blueviolet)
 
 ------------------------------------------------------------------------
 
