@@ -19,7 +19,7 @@ dependencies:
 
   # Python packages via pip
   - pip:
-      # Deep Learning (only torch — torchvision/audio not used)
+      # Deep Learning (only torch, torchvision/audio not used)
       - torch>=2.0.0
 
       # Transformers pinned <5.0 to avoid noisy __path__ deprecation warnings
@@ -30,7 +30,7 @@ dependencies:
       - duckdb>=0.9.0
 
       # Information Retrieval
-      - bm25s>=0.2.0
+      - rank-bm25>=0.2.2
       - faiss-cpu>=1.8.0
 
       # Utilities
