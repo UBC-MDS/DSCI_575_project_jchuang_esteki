@@ -28,7 +28,7 @@ A retrieval system combining **BM25 keyword-based search**, **semantic embedding
 
 ------------------------------------------------------------------------
 
-## Overview {#overview}
+## Overview
 
 ### Project Goal
 
@@ -46,7 +46,7 @@ We use the **Amazon Reviews 2023** dataset from UC San Diego's McAuley Lab, cont
 
 ------------------------------------------------------------------------
 
-## Getting Started {#getting-started}
+## Getting Started
 
 ### Requirements
 
@@ -73,7 +73,7 @@ cp env.example .env
 
 ------------------------------------------------------------------------
 
-## Running the System {#running-the-system}
+## Running the System
 
 **First time (generate indexes and RAG pipeline):**
 
@@ -100,7 +100,7 @@ streamlit run app/app.py
 
 ------------------------------------------------------------------------
 
-## Scale and Runtime {#scale-and-runtime}
+## Scale and Runtime
 
 The final submission scales the pipeline to 120,000 sampled reviews (Option 3 of the final milestone). After preprocessing (dropping 9,833 reviews under 20 characters) the retrieval corpus contains **110,167 enriched documents** spanning tens of thousands of unique products.
 
@@ -136,7 +136,7 @@ The final submission scales the pipeline to 120,000 sampled reviews (Option 3 of
 
 ------------------------------------------------------------------------
 
-## Testing the System {#testing-the-system}
+## Testing the System
 
 Try these example queries with the app running:
 
@@ -170,7 +170,7 @@ For detailed evaluation results, see `results/milestone1_discussion.md`, `result
 
 ------------------------------------------------------------------------
 
-## How the System Works {#how-the-system-works}
+## How the System Works
 
 ### Data Processing Pipeline
 
@@ -194,7 +194,7 @@ Raw data transforms through the following notebooks, each producing outputs for 
 
 ------------------------------------------------------------------------
 
-## Retrieval Methods {#retrieval-methods}
+## Retrieval Methods
 
 -   **BM25 Keyword Search (Notebook 03):** Indexes every word and which documents contain it. When searching "mystery novel", finds documents with both words and scores based on term frequency and inverse document frequency. Speed: \<10ms per query. Strengths: fast, transparent, exact keyword matching. Limitations: no synonyms, words treated independently, no intent understanding.
 
@@ -204,7 +204,7 @@ Raw data transforms through the following notebooks, each producing outputs for 
 
 ------------------------------------------------------------------------
 
-## Retrieval-Augmented Generation (RAG) {#retrieval-augmented-generation-rag}
+## Retrieval-Augmented Generation (RAG)
 
 RAG combines retrieval with generative AI to answer questions using book data as context:
 
@@ -240,7 +240,7 @@ Generated automatically by Notebook 07:
 
 ------------------------------------------------------------------------
 
-## Groq LLM Integration {#groq-llm-integration}
+## Groq LLM Integration
 
 Groq provides free, fast LLM access for RAG generation.
 
@@ -276,7 +276,7 @@ If a model returns a `decommissioned` or `not supported` error, the app silently
 
 ------------------------------------------------------------------------
 
-## Project Structure {#project-structure}
+## Project Structure
 
 ```         
 DSCI_575_project_jchuang_esteki/
@@ -391,7 +391,7 @@ DSCI_575_project_jchuang_esteki/
 
 ------------------------------------------------------------------------
 
-## Data Files and Field Selection {#data-files-and-field-selection}
+## Data Files and Field Selection
 
 ### Data Files
 
@@ -439,7 +439,7 @@ For corpus building, we selected:
 
 ------------------------------------------------------------------------
 
-## Text Preprocessing {#text-preprocessing}
+## Text Preprocessing
 
 All text is processed using consistent helper functions from `src/utils.py`.
 
@@ -470,7 +470,7 @@ The same preprocessing pipeline is used: - During indexing (Notebooks 03 and 04)
 
 ------------------------------------------------------------------------
 
-## Evaluation Results {#evaluation-results}
+## Evaluation Results
 
 ### Milestone 1: Retrieval Methods
 
@@ -507,7 +507,7 @@ Notebook 08 compares LLaMA 3.3 70B vs LLaMA 3.1 8B on 5 queries. The full datase
 
 ------------------------------------------------------------------------
 
-## References and Resources {#references-and-resources}
+## References and Resources
 
 -   Dataset: <https://amazon-reviews-2023.github.io/>
 -   BM25 Algorithm: <https://en.wikipedia.org/wiki/Okapi_BM25>
@@ -519,6 +519,6 @@ Notebook 08 compares LLaMA 3.3 70B vs LLaMA 3.1 8B on 5 queries. The full datase
 
 ------------------------------------------------------------------------
 
-## License {#license}
+## License
 
 MIT License
