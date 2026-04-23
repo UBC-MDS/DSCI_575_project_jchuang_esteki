@@ -19,10 +19,10 @@ dependencies:
 
   # Python packages via pip
   - pip:
-      # Deep Learning (only torch, torchvision/audio not used)
+      # Deep Learning
       - torch>=2.0.0
 
-      # Transformers pinned <5.0 to avoid noisy __path__ deprecation warnings
+      # Transformers
       - transformers>=4.30.0,<5.0
       - sentence-transformers>=2.2.0
 

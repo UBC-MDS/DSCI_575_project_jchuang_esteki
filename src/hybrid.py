@@ -9,6 +9,16 @@ class HybridRetriever:
     """
 
     def __init__(self, bm25_retriever, semantic_retriever):
+        """Initialize with a BM25 retriever and a semantic retriever.
+
+        Parameters
+        ----------
+        bm25_retriever : BM25Retriever
+            An instance exposing a ``search(query, top_k)`` method that returns
+            ``(doc_id, score)`` tuples.
+        semantic_retriever : SemanticRetriever
+            An instance exposing the same ``search(query, top_k)`` interface.
+        """
         self.bm25 = bm25_retriever
         self.semantic = semantic_retriever
 

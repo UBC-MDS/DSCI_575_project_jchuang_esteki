@@ -1,6 +1,6 @@
 """Streamlit app for the Amazon Books Retrieval System.
 
-Provides four search modes over a 91,850-document corpus of Amazon book
+Provides four search modes over a 110,167-document corpus of Amazon book
 reviews: BM25 keyword search, semantic embedding search, weighted hybrid
 search, and retrieval-augmented generation (RAG) via the Groq API.
 """
@@ -223,41 +223,46 @@ def display_book_result(rank: int, doc_id: int, df: pd.DataFrame, score: float =
     rating = row.get("rating", 0)
 
     with st.container(border=True):
-        col_rank, col_title = st.columns([0.08, 0.92])
+        # Rank + title header. Use a fixed-width rank column that stays legible
+        # on narrow viewports, and let the title wrap.
+        col_rank, col_title = st.columns([1, 12], gap="small")
         with col_rank:
             st.markdown(
-                f"<div style='font-size: 18px; font-weight: bold; color: #1f77b4;'>{rank}</div>",
+                f"<div style='font-size: 1.1rem; font-weight: 700; color: #1f77b4; "
+                f"text-align: center; padding-top: 0.1rem;'>{rank}</div>",
                 unsafe_allow_html=True,
             )
         with col_title:
             st.markdown(
-                f"<div style='font-size: 16px; font-weight: 600;'>{title}</div>",
+                f"<div style='font-size: 1rem; font-weight: 600; word-wrap: break-word; "
+                f"line-height: 1.3;'>{title}</div>",
                 unsafe_allow_html=True,
             )
 
-        st.markdown("---")
+        st.markdown("<hr style='margin: 0.4rem 0;'>", unsafe_allow_html=True)
 
-        col_review, col_meta = st.columns([0.7, 0.3])
-        with col_review:
-            review_display = (
-                (review_text[:250] + "..." if len(review_text) > 250 else review_text)
-                if review_text else "(No review)"
-            )
-            st.caption(review_display)
-        with col_meta:
-            st.metric("Review Rating", f"{rating}/5.0", label_visibility="collapsed")
+        review_display = (
+            (review_text[:250] + "..." if len(review_text) > 250 else review_text)
+            if review_text else "(No review)"
+        )
+        st.caption(review_display)
 
-        col_score, col_id = st.columns(2)
+        # Metadata row: rating, score, book id.
+        col_rating, col_score, col_id = st.columns(3, gap="small")
+        with col_rating:
+            st.caption(f"Rating: **{rating}/5.0**")
         with col_score:
             if score > 0:
                 if method == "semantic":
-                    st.caption(f"Distance: {score:.4f} (lower = more similar)")
+                    st.caption(f"Distance: **{score:.4f}**")
                 elif method == "bm25":
-                    st.caption(f"BM25 Score: {score:.2f} (higher = stronger keyword match)")
+                    st.caption(f"BM25: **{score:.2f}**")
                 elif method == "hybrid":
-                    st.caption(f"Hybrid Score: {score:.3f} (normalised 0-1, higher = better)")
+                    st.caption(f"Score: **{score:.3f}**")
+            else:
+                st.caption(" ")
         with col_id:
-            st.caption(f"Book ID: {doc_id}")
+            st.caption(f"ID: `{doc_id}`")
 
 
 def setup_groq_sidebar():
@@ -296,7 +301,7 @@ def render_about_tab():
     """Render the About tab with a user-facing guide, examples, and system notes."""
     st.markdown("### About This App")
     st.markdown(
-        "This app is a search system over **91,850 Amazon book reviews** "
+        "This app is a search system over **110,167 Amazon book reviews** "
         "(sampled from the 11.7M-review Amazon Books 2023 dataset). It offers "
         "four different ways to find relevant books, each suited to a different "
         "style of query. You can compare their results side by side."
@@ -318,7 +323,7 @@ def render_about_tab():
 
     st.markdown("### The Four Search Modes")
 
-    with st.expander("BM25 Keyword Search"):
+    with st.expander("BM25 - Keyword Search"):
         st.markdown(
             "**What it does:** classical inverted-index retrieval using the Okapi "
             "BM25 algorithm. Matches exact tokens and scores by term frequency and "
@@ -336,11 +341,11 @@ def render_about_tab():
         )
         st.caption("Speed: under 100 ms per query. Score: higher is better.")
 
-    with st.expander("Semantic Meaning Search"):
+    with st.expander("Semantic - Meaning Search"):
         st.markdown(
             "**What it does:** encodes the query into a 384-dim vector using "
             "`all-MiniLM-L6-v2` and retrieves the nearest neighbours in a "
-            "FAISS index of 91,850 document embeddings.\n\n"
+            "FAISS index of 110,167 document embeddings.\n\n"
             "**Best for:** paraphrased queries, intent-based searches, cases where "
             "the user does not know the exact words that appear in the review.\n\n"
             "**Example queries:**"
@@ -354,7 +359,7 @@ def render_about_tab():
         )
         st.caption("Speed: about 100 ms per query. Score: lower distance is better.")
 
-    with st.expander("Hybrid Weighted Search"):
+    with st.expander("Hybrid - Weighted Search"):
         st.markdown(
             "**What it does:** runs both BM25 and Semantic retrieval, normalises "
             "the two score ranges, and combines them with a weight slider.\n\n"
@@ -375,7 +380,7 @@ def render_about_tab():
             "query, slide toward Semantic."
         )
 
-    with st.expander("RAG (Retrieval-Augmented Generation)"):
+    with st.expander("RAG - Retrieval-Augmented Generation"):
         st.markdown(
             "**What it does:** retrieves the top-k books using hybrid search, "
             "stuffs the retrieved review text into a prompt, and sends it to "
@@ -387,7 +392,7 @@ def render_about_tab():
             "**Prompt styles:**\n"
             "- **balanced** (default): lets the model synthesise and interpret the reviews.\n"
             "- **strict**: forces the model to stay very close to the retrieved text, "
-            "  reducing hallucination risk but producing shorter answers.\n\n"
+            "reducing hallucination risk but producing shorter answers.\n\n"
             "**Example queries:**"
         )
         st.code(
@@ -428,8 +433,8 @@ def render_about_tab():
 
     st.markdown("### Data and Models")
     st.markdown(
-        "- **Corpus:** 91,850 enriched review documents (sampled from 100K reviews, "
-        "filtered to entries ≥20 characters). Built by `notebooks/02_data_preparation.ipynb`.\n"
+        "- **Corpus:** 110,167 enriched review documents (sampled from 120K reviews, "
+        "filtered to entries >=20 characters). Built by `notebooks/02_data_preparation.ipynb`.\n"
         "- **BM25 index:** Okapi BM25 via `rank_bm25`. Built by `notebooks/03_bm25_keyword_search.ipynb`.\n"
         "- **Semantic index:** `all-MiniLM-L6-v2` embeddings (384-dim) indexed with "
         "FAISS `IndexFlatL2`. Built by `notebooks/04_semantic_embedding_search.ipynb`.\n"
@@ -441,18 +446,72 @@ def render_about_tab():
 
 def main():
     """Main Streamlit entry point."""
-    st.set_page_config(page_title="Amazon Books Retrieval", page_icon="📚", layout="wide")
+    st.set_page_config(
+        page_title="Amazon Books Retrieval",
+        page_icon="📚",
+        layout="wide",
+        initial_sidebar_state="auto",
+    )
 
     st.markdown(
         """
     <style>
-    .main-header { font-size: 2.5em; font-weight: 700; }
-    .subtitle { font-size: 1.1em; color: #666; margin-bottom: 1.5em; }
-    .badge { display: inline-block; padding: 0.5em 1em; border-radius: 20px; font-weight: 600; }
+    /* Responsive main header: scales with viewport, caps on wide screens */
+    .main-header {
+        font-size: clamp(1.6rem, 4vw, 2.5rem);
+        font-weight: 700;
+        line-height: 1.15;
+        margin-bottom: 0.25rem;
+        word-wrap: break-word;
+    }
+    .subtitle {
+        font-size: clamp(0.9rem, 1.6vw, 1.1rem);
+        color: #888;
+        margin-bottom: 1.5em;
+        line-height: 1.4;
+    }
+
+    /* Buttons (both st.button and st.form_submit_button): keep label on one
+       line and match the default text-input height so they align visually. */
+    .stButton > button,
+    .stFormSubmitButton > button,
+    div[data-testid="stFormSubmitButton"] > button {
+        white-space: nowrap;
+        min-width: 120px;
+        height: 2.5rem;
+        font-weight: 600;
+    }
+
+    /* Badges for each search mode */
+    .badge {
+        display: inline-block;
+        padding: 0.35em 0.9em;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        margin-right: 0.5em;
+        white-space: nowrap;
+    }
     .badge-bm25 { background-color: #FF6B6B; color: white; }
     .badge-semantic { background-color: #4ECDC4; color: white; }
     .badge-hybrid { background-color: #45B7D1; color: white; }
     .badge-rag { background-color: #96CEB4; color: white; }
+
+    /* Tab label sizing */
+    .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
+        font-size: clamp(0.85rem, 1.3vw, 1rem);
+        font-weight: 500;
+    }
+
+    /* Mobile layout adjustments */
+    @media (max-width: 640px) {
+        .main-header { font-size: 1.5rem; }
+        .subtitle { font-size: 0.85rem; margin-bottom: 1em; }
+        .badge { font-size: 0.75rem; padding: 0.25em 0.7em; }
+        .stButton > button,
+        .stFormSubmitButton > button,
+        div[data-testid="stFormSubmitButton"] > button { min-width: 90px; }
+    }
     </style>
     """,
         unsafe_allow_html=True,
@@ -460,7 +519,7 @@ def main():
 
     st.markdown('<div class="main-header">Amazon Books Retrieval System</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="subtitle">Final Submission: Dual-Method Retrieval with RAG over 91,850 Reviews</div>',
+        '<div class="subtitle">Final Submission - Dual-Method Retrieval with RAG over 110,167 Reviews</div>',
         unsafe_allow_html=True,
     )
 
@@ -469,15 +528,25 @@ def main():
     st.markdown("---")
     st.markdown("### Search")
 
-    col_input, col_btn = st.columns([0.92, 0.08])
-    with col_input:
-        query = st.text_input(
-            "Enter search query",
-            placeholder="E.g., 'machine learning for beginners'",
-            label_visibility="collapsed",
-        )
-    with col_btn:
-        search_button = st.button("Search", use_container_width=True, type="primary")
+    # Using st.form makes the text input and submit button render as peers
+    # on the same baseline. `st.form_submit_button` plus `clear_on_submit=False`
+    # keeps the query visible across reruns. This is the most reliable way
+    # to align an input and a button in Streamlit without CSS hacks.
+    with st.form("search_form", clear_on_submit=False, border=False):
+        col_input, col_btn = st.columns([5, 1], gap="small")
+        with col_input:
+            query = st.text_input(
+                "Search query",
+                placeholder="E.g., 'machine learning for beginners'",
+                label_visibility="collapsed",
+                key="search_query",
+            )
+        with col_btn:
+            search_button = st.form_submit_button(
+                "Search",
+                use_container_width=True,
+                type="primary",
+            )
 
     if not query.strip() and search_button:
         st.warning("Please enter a search query")
@@ -496,8 +565,11 @@ def main():
         return
 
     with tab_bm25:
-        st.markdown("<span class='badge badge-bm25'>BM25</span> Keyword Search", unsafe_allow_html=True)
-        st.markdown("Fast exact-match retrieval using term frequency scoring.")
+        st.markdown(
+            "<span class='badge badge-bm25'>BM25</span> **Keyword Search**",
+            unsafe_allow_html=True,
+        )
+        st.caption("Fast exact-match retrieval using term frequency scoring.")
         top_k = st.slider("Results", 1, 10, 5, key="bm25_k")
 
         if search_button and query.strip():
@@ -512,8 +584,11 @@ def main():
                 st.error(f"Search error: {e}")
 
     with tab_semantic:
-        st.markdown("<span class='badge badge-semantic'>Semantic</span> Meaning-Based Search", unsafe_allow_html=True)
-        st.markdown("Embedding-based search that understands semantic meaning and synonyms.")
+        st.markdown(
+            "<span class='badge badge-semantic'>Semantic</span> **Meaning-Based Search**",
+            unsafe_allow_html=True,
+        )
+        st.caption("Embedding-based search that understands semantic meaning and synonyms.")
         top_k = st.slider("Results", 1, 10, 5, key="semantic_k")
 
         if search_button and query.strip():
@@ -528,9 +603,12 @@ def main():
                 st.error(f"Search error: {e}")
 
     with tab_hybrid:
-        st.markdown("<span class='badge badge-hybrid'>Hybrid</span> Combined Search", unsafe_allow_html=True)
-        st.markdown("Balances keyword precision with semantic understanding.")
-        col_k, col_w = st.columns(2)
+        st.markdown(
+            "<span class='badge badge-hybrid'>Hybrid</span> **Combined Search**",
+            unsafe_allow_html=True,
+        )
+        st.caption("Balances keyword precision with semantic understanding.")
+        col_k, col_w = st.columns(2, gap="medium")
         with col_k:
             top_k = st.slider("Results", 1, 10, 5, key="hybrid_k")
         with col_w:
@@ -558,10 +636,13 @@ def main():
                 st.error(f"Search error: {e}")
 
     with tab_rag:
-        st.markdown("<span class='badge badge-rag'>RAG</span> Question Answering", unsafe_allow_html=True)
-        st.markdown("Retrieval-augmented generation: finds books and generates an AI answer grounded in their reviews.")
+        st.markdown(
+            "<span class='badge badge-rag'>RAG</span> **Question Answering**",
+            unsafe_allow_html=True,
+        )
+        st.caption("Retrieval-augmented generation: finds books and generates an AI answer grounded in their reviews.")
 
-        col_k, col_p = st.columns(2)
+        col_k, col_p = st.columns(2, gap="medium")
         with col_k:
             top_k = st.slider("Top Books", 1, 10, 5, key="rag_k")
         with col_p:

@@ -1,4 +1,3 @@
-
 import faiss
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -8,6 +7,15 @@ class SemanticRetriever:
     """Semantic search using FAISS and sentence embeddings."""
 
     def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
+        """Initialize with a sentence-transformers model name.
+
+        Parameters
+        ----------
+        model_name : str
+            Hugging Face / sentence-transformers model identifier. Defaults to
+            ``all-MiniLM-L6-v2`` (384-dimensional embeddings), which is the
+            model used throughout the project notebooks.
+        """
         self.model = SentenceTransformer(model_name)
         self.index = None
         self.corpus = None
