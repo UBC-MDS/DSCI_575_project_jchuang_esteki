@@ -52,6 +52,8 @@ Both models used `max_tokens=300` and `temperature=0.3` for a fair comparison.
 
 Five queries were run across three difficulty levels on the 110,167-document corpus. Both models received identical retrieved context from the hybrid retriever and the same `BALANCED` prompt template. Full outputs are in `notebooks/08_llm_comparison.ipynb`.
 
+> **Note:** The summaries below were written for the original 20k-product corpus. The pipeline has since been scaled to 120k products (see Step 2), so the retrieved books shown in notebook 08 may differ slightly from what is described here, as the larger corpus and rebuilt indexes are now in place.
+
 **Query 1 (Easy): "mystery novel"**
 
 Retrieved: *Mystery at Seagrave Hall* (Eve Mallow #3), *The Harry Starke Series: Books 1-3*, *Mystery at Apple Tree Cottage* (Eve Mallow #2), *Six Years*, *Love Me If You Must* (Patricia Amble #1)
